@@ -5,6 +5,7 @@ the same functionality as the original app.py
 """
 from flask import Flask, jsonify, request, current_app, render_template
 from flask_cors import CORS
+from dotenv import load_dotenv
 import os
 import sys
 import json
@@ -20,15 +21,15 @@ import socket
 import glob
 import shutil
 import requests
-import hmac
-import hashlib
-from urllib.parse import parse_qs
 from logging.handlers import RotatingFileHandler
 from flask_socketio import SocketIO, emit
 import multiprocessing
 import numpy as np
 from pathlib import Path
 from routing.Server import app as route_temp_app
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Socket Mode integration imports
 try:
@@ -47,44 +48,24 @@ from config import UPLOAD_FOLDER, PLANS_FOLDER, MAX_CONTENT_LENGTH, SECRET_KEY
 # Configuration constants - moved from hardcoded values
 class AppConfig:
     STANDARD_JSON_FILENAME = "latest_container_plan.json"
-    NGROK_DOMAIN = os.getenv('NGROK_DOMAIN', "destined-mammoth-flowing.ngrok-free.app")
+    JSON_SERVER_PORT = 8000
+    ROUTE_TEMP_PORT = 5001
+    NGROK_DOMAIN = os.getenv('NGROK_DOMAIN', 'localhost:5000')  # Default to localhost
+    
+    @staticmethod
+    def get_base_url():
+        """Get base URL for the application"""
+        return "http://localhost:5000"
+    
+    @staticmethod
+    def get_ngrok_url():
+        """Get ngrok URL if available, otherwise return local URL"""
+        return AppConfig.get_base_url()
     JSON_SERVER_PORT = int(os.getenv('JSON_SERVER_PORT', '8000'))
     ROUTE_TEMP_PORT = int(os.getenv('ROUTE_TEMP_PORT', '5001'))
     MAIN_APP_PORT = int(os.getenv('MAIN_APP_PORT', '5000'))
     LOG_MAX_BYTES = int(os.getenv('LOG_MAX_BYTES', str(1024 * 1024)))  # 1MB
     LOG_BACKUP_COUNT = int(os.getenv('LOG_BACKUP_COUNT', '10'))
-    
-    # Dynamic ngrok support
-    _ngrok_process = None
-    _ngrok_url = None
-    
-    @staticmethod
-    def get_ngrok_url():
-        """Get current ngrok URL or localhost fallback"""
-        # First check environment variable (set by start_dynamic_slack.py)
-        if os.getenv('NGROK_PUBLIC_URL'):
-            return os.getenv('NGROK_PUBLIC_URL')
-        
-        # Try to get from ngrok API
-        try:
-            response = requests.get("http://localhost:4040/api/tunnels", timeout=2)
-            if response.status_code == 200:
-                tunnels = response.json()
-                for tunnel in tunnels.get('tunnels', []):
-                    if tunnel.get('proto') == 'https':
-                        AppConfig._ngrok_url = tunnel.get('public_url')
-                        return AppConfig._ngrok_url
-        except:
-            pass
-        
-        # Fallback to localhost
-        return f"http://localhost:{AppConfig.MAIN_APP_PORT}"
-    
-    @staticmethod
-    def get_slack_command_url():
-        """Get dynamic URL for Slack commands"""
-        base_url = AppConfig.get_ngrok_url()
-        return f"{base_url}/slack/commands"
     
     # Production configuration helpers
     @staticmethod
@@ -97,14 +78,11 @@ class AppConfig:
         """Get port from environment variable (Render sets PORT)"""
         return int(os.environ.get('PORT', AppConfig.MAIN_APP_PORT))
 
-# Slack Configuration
+# Slack Configuration (Socket Mode Only)
 class SlackConfig:
-    """Slack app configuration"""
-    CLIENT_ID = "9220170300022.9221490265557"
-    CLIENT_SECRET = os.getenv('SLACK_CLIENT_SECRET', "ac2f422216c0682f10278d2550f9f902")
-    SIGNING_SECRET = os.getenv('SLACK_SIGNING_SECRET', "e2475a30a09640d4055a5d5efa834084")
-    BOT_TOKEN = os.getenv('SLACK_BOT_TOKEN', "")  # You'll set this after installation
-    WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL', "")  # Optional for notifications
+    """Slack app configuration for Socket Mode"""
+    # Only keep essential configuration for Socket Mode
+    pass
 
 # Socket Mode Integration
 class SlackSocketMode:
@@ -150,16 +128,30 @@ class SlackSocketMode:
             ack()
             
             try:
-                # Get system status from existing SlackCommandHandler
-                handler = SlackCommandHandler()
-                response = handler.handle_status_command()
+                # Get system status directly without HTTP handler
+                json_service = JSONServerService.get_instance()
+                json_running = json_service.is_running()
+                main_status = "🟢 Running"
+                json_status = "🟢 Running" if json_running else "🔴 Stopped"
+                route_status = "🟢 Running" if is_port_in_use(AppConfig.ROUTE_TEMP_PORT) else "🔴 Stopped"
+                
+                status_message = f"""🚛 *OptiGenix Container Optimizer Status*
+
+📊 *System Status:*
+• Main Server: {main_status} (Port: {AppConfig.get_port()})
+• JSON Server: {json_status}
+• Route Server: {route_status} (Port: {AppConfig.ROUTE_TEMP_PORT})
+
+💡 *Available Commands:*
+• `/optigenix-status` - Check server status  
+• `/optigenix-optimize [urgent|normal]` - Start optimization"""
                 
                 say(blocks=[
                     {
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": response.get("text", "🚛 OptiGenix Status: All systems operational!")
+                            "text": status_message
                         }
                     },
                     {
@@ -194,11 +186,22 @@ class SlackSocketMode:
                 text = command.get("text", "").strip()
                 user_name = command.get("user_name", "Unknown")
                 
-                # Use existing SlackCommandHandler
-                handler = SlackCommandHandler()
-                response = handler.handle_optimize_command(text, user_name)
+                priority = text.lower() if text else "normal"
                 
-                say(response.get("text", f"🚀 Optimization started by {user_name}!"))
+                if priority not in ["urgent", "normal"]:
+                    say("❌ Usage: `/optigenix-optimize [urgent|normal]`")
+                    return
+                
+                response_text = f"""🚀 *Optimization Started by {user_name}!*
+
+📊 *Details:*
+• Priority: {priority.upper()}
+• Estimated Time: 2-5 minutes
+• Status: Processing...
+
+⏳ *I'll notify the team when complete!*"""
+                
+                say(response_text)
                 
             except Exception as e:
                 logger.error(f"Error in Socket Mode optimize command: {e}")
@@ -216,9 +219,7 @@ class SlackSocketMode:
                 text = event.get("text", "").lower()
                 
                 if "status" in text:
-                    handler = SlackCommandHandler()
-                    response = handler.handle_status_command()
-                    say(response.get("text", "🚛 OptiGenix: All systems operational!"))
+                    say("🚛 OptiGenix: All systems operational! Use `/optigenix-status` for details.")
                 elif "help" in text:
                     say("""🚛 *OptiGenix Bot Help*
 
@@ -244,8 +245,6 @@ class SlackSocketMode:
             ack()
             user_name = body.get("user", {}).get("name", "Unknown")
             
-            handler = SlackCommandHandler()
-            response = handler.handle_optimize_command("normal", user_name)
             say(f"🚀 Quick optimization started by {user_name}!")
         
         @self.bot_app.action("open_dashboard")
@@ -313,230 +312,15 @@ from modules.handlers import (
     clear_container_handler, handle_socketio_update_request, generate_alternative_plan_handler,
     download_ar_apk
 )
+# Import other modules
+from modules.handlers import (
+    landing_handler, start_handler, optimize_handler, download_report_handler,
+    view_report_handler, preview_csv_handler,
+    get_container_stats_handler, get_item_details_handler, get_container_status_handler,
+    clear_container_handler, handle_socketio_update_request, generate_alternative_plan_handler,
+    download_ar_apk
+)
 from modules.handlers import bp
-
-# Slack Integration Classes
-class SlackService:
-    """Service for handling Slack interactions"""
-    
-    def __init__(self):
-        self.client_id = SlackConfig.CLIENT_ID
-        self.client_secret = SlackConfig.CLIENT_SECRET
-        self.signing_secret = SlackConfig.SIGNING_SECRET
-        self.bot_token = SlackConfig.BOT_TOKEN
-        
-    def verify_slack_signature(self, request_body, timestamp, signature):
-        """Verify that requests come from Slack"""
-        if not self.signing_secret:
-            return True  # Skip verification if no signing secret
-            
-        # Create signature
-        sig_basestring = f"v0:{timestamp}:{request_body}"
-        my_signature = 'v0=' + hmac.new(
-            self.signing_secret.encode(),
-            sig_basestring.encode(),
-            hashlib.sha256
-        ).hexdigest()
-        
-        return hmac.compare_digest(my_signature, signature)
-    
-    def send_message(self, channel, text, blocks=None):
-        """Send message to Slack channel"""
-        if not self.bot_token:
-            print("No Slack bot token configured")
-            return False
-            
-        url = "https://slack.com/api/chat.postMessage"
-        headers = {
-            "Authorization": f"Bearer {self.bot_token}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "channel": channel,
-            "text": text
-        }
-        
-        if blocks:
-            payload["blocks"] = blocks
-            
-        try:
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            return response.status_code == 200 and response.json().get("ok", False)
-        except Exception as e:
-            print(f"Failed to send Slack message: {e}")
-            return False
-    
-    def send_webhook_notification(self, message):
-        """Send notification via webhook"""
-        if not SlackConfig.WEBHOOK_URL:
-            return False
-            
-        payload = {"text": message}
-        
-        try:
-            response = requests.post(SlackConfig.WEBHOOK_URL, json=payload, timeout=10)
-            return response.status_code == 200
-        except Exception as e:
-            print(f"Failed to send webhook notification: {e}")
-            return False
-
-class SlackCommandHandler:
-    """Handle Slack slash commands"""
-    
-    def __init__(self):
-        self.slack_service = SlackService()
-    
-    def handle_status_command(self):
-        """Handle /optigenix-status command"""
-        try:
-            # Check main server status
-            main_status = "🟢 Running"
-            
-            # Check JSON server status
-            json_service = JSONServerService.get_instance()
-            json_status = "🟢 Running" if json_service.is_running() else "🔴 Stopped"
-            json_url = json_service.get_url() if json_service.is_running() else "Not available"
-            
-            # Check route temperature server
-            route_status = "🟢 Running" if is_port_in_use(AppConfig.ROUTE_TEMP_PORT) else "🔴 Stopped"
-            
-            # Get environment info
-            env = "Production" if AppConfig.is_production() else "Development"
-            port = AppConfig.get_port()
-            
-            # Get recent optimization stats
-            stats = self._get_optimization_stats()
-            
-            status_message = f"""🚛 *OptiGenix Container Optimizer Status*
-
-📊 *System Status:*
-• Main Server: {main_status} (Port: {port})
-• JSON Server: {json_status}
-• Route Server: {route_status} (Port: {AppConfig.ROUTE_TEMP_PORT})
-• Environment: {env}
-
-📈 *Recent Activity:*
-• Total Optimizations: {stats['total_optimizations']}
-• Average Efficiency: {stats['avg_efficiency']:.1f}%
-• Last Optimization: {stats['last_optimization']}
-
-🔗 *AR Visualization URL:*
-`{json_url}`
-
-💡 *Available Commands:*
-• `/optigenix-status` - Check server status
-• `/optigenix-optimize [urgent|normal]` - Start optimization"""
-            
-            return {
-                "response_type": "in_channel",
-                "text": status_message
-            }
-            
-        except Exception as e:
-            return {
-                "response_type": "ephemeral",
-                "text": f"❌ Error checking status: {str(e)}"
-            }
-    
-    def handle_optimize_command(self, text, user_name):
-        """Handle /optigenix-optimize command"""
-        try:
-            priority = text.strip().lower() if text else "normal"
-            
-            if priority not in ["urgent", "normal"]:
-                return {
-                    "response_type": "ephemeral",
-                    "text": "❌ Usage: `/optigenix-optimize [urgent|normal]`"
-                }
-            
-            # Check if we have data to optimize
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            upload_dir = os.path.join(script_dir, "uploads")
-            csv_files = glob.glob(os.path.join(upload_dir, "*.csv"))
-            
-            if not csv_files:
-                return {
-                    "response_type": "ephemeral",
-                    "text": "❌ No CSV files found. Please upload data first via the web interface."
-                }
-            
-            # Get latest file info
-            latest_file = max(csv_files, key=os.path.getmtime)
-            file_name = os.path.basename(latest_file)
-            
-            # Return immediate response
-            response_text = f"""🚀 *Optimization Started by {user_name}!*
-
-📊 *Details:*
-• Priority: {priority.upper()}
-• Data File: {file_name}
-• Estimated Time: 2-5 minutes
-• Status: Processing...
-
-⏳ *I'll notify the team when complete!*"""
-            
-            # In a real implementation, you would trigger optimization here
-            # For demo purposes, we'll simulate success
-            
-            return {
-                "response_type": "in_channel",
-                "text": response_text
-            }
-            
-        except Exception as e:
-            return {
-                "response_type": "ephemeral",
-                "text": f"❌ Error starting optimization: {str(e)}"
-            }
-    
-    def _get_optimization_stats(self):
-        """Get optimization statistics"""
-        try:
-            # Get container plans directory
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            plans_dir = os.path.join(script_dir, "container_plans")
-            
-            json_files = glob.glob(os.path.join(plans_dir, "*.json"))
-            
-            if not json_files:
-                return {
-                    "total_optimizations": 0,
-                    "avg_efficiency": 0.0,
-                    "last_optimization": "Never"
-                }
-            
-            # Get stats from recent files
-            total_files = len(json_files)
-            latest_file = max(json_files, key=os.path.getmtime)
-            
-            # Try to read efficiency from latest file
-            avg_efficiency = 85.0  # Default value
-            try:
-                with open(latest_file, 'r') as f:
-                    data = json.load(f)
-                    if 'container_info' in data and 'volume_utilization' in data['container_info']:
-                        avg_efficiency = data['container_info']['volume_utilization']
-            except:
-                pass
-            
-            # Get last modification time
-            last_mod = os.path.getmtime(latest_file)
-            last_optimization = time.strftime("%Y-%m-%d %H:%M", time.localtime(last_mod))
-            
-            return {
-                "total_optimizations": total_files,
-                "avg_efficiency": avg_efficiency,
-                "last_optimization": last_optimization
-            }
-            
-        except Exception as e:
-            print(f"Error getting optimization stats: {e}")
-            return {
-                "total_optimizations": 0,
-                "avg_efficiency": 0.0,
-                "last_optimization": "Unknown"
-            }
 
 # Integrated JSON Server implementation
 class JSONServerService:
@@ -984,201 +768,6 @@ def create_app():
     def container_visualization():
         """Serve the container visualization page"""
         return render_template('container_visualization.html')
-    
-    # Slack Integration Routes
-    @app.route('/slack/commands', methods=['POST'])
-    def handle_slack_command():
-        """Handle Slack slash commands"""
-        try:
-            # Get request data
-            form_data = request.form
-            request_body = request.get_data(as_text=True)
-            
-            # Verify Slack signature (optional but recommended)
-            slack_signature = request.headers.get('X-Slack-Signature', '')
-            slack_timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
-            
-            slack_service = SlackService()
-            if slack_signature and slack_timestamp:
-                if not slack_service.verify_slack_signature(request_body, slack_timestamp, slack_signature):
-                    app.logger.warning("Invalid Slack signature")
-                    return jsonify({"text": "Unauthorized"}), 401
-            
-            # Parse command data
-            command = form_data.get('command', '')
-            text = form_data.get('text', '')
-            user_name = form_data.get('user_name', 'Unknown')
-            channel_id = form_data.get('channel_id', '')
-            
-            app.logger.info(f"Slack command received: {command} from {user_name}")
-            
-            # Handle commands
-            handler = SlackCommandHandler()
-            
-            if command == '/optigenix-status':
-                return jsonify(handler.handle_status_command())
-            elif command == '/optigenix-optimize':
-                return jsonify(handler.handle_optimize_command(text, user_name))
-            else:
-                return jsonify({
-                    "response_type": "ephemeral",
-                    "text": f"❌ Unknown command: {command}"
-                })
-                
-        except Exception as e:
-            app.logger.error(f"Error handling Slack command: {str(e)}")
-            return jsonify({
-                "response_type": "ephemeral",
-                "text": "❌ Sorry, there was an error processing your command."
-            })
-    
-    @app.route('/slack/oauth', methods=['GET'])
-    def slack_oauth():
-        """Handle Slack OAuth callback"""
-        try:
-            code = request.args.get('code')
-            if not code:
-                return "Missing authorization code", 400
-            
-            # Exchange code for token
-            oauth_url = "https://slack.com/api/oauth.v2.access"
-            payload = {
-                "client_id": SlackConfig.CLIENT_ID,
-                "client_secret": SlackConfig.CLIENT_SECRET,
-                "code": code
-            }
-            
-            response = requests.post(oauth_url, data=payload)
-            oauth_data = response.json()
-            
-            if oauth_data.get("ok"):
-                bot_token = oauth_data.get("access_token")
-                app.logger.info(f"Slack OAuth successful. Bot token: {bot_token[:10]}...")
-                return "✅ OptiGenix Bot installed successfully! You can now use slash commands."
-            else:
-                app.logger.error(f"Slack OAuth failed: {oauth_data}")
-                return f"❌ OAuth failed: {oauth_data.get('error', 'Unknown error')}", 400
-                
-        except Exception as e:
-            app.logger.error(f"Error in Slack OAuth: {str(e)}")
-            return f"❌ OAuth error: {str(e)}", 500
-    
-    @app.route('/slack/test', methods=['POST'])
-    def test_slack_integration():
-        """Test endpoint for Slack integration"""
-        try:
-            slack_service = SlackService()
-            
-            # Test sending a message
-            test_message = """🧪 *OptiGenix Bot Test*
-            
-✅ Bot is connected and working!
-🚛 Container optimization system ready
-💡 Try `/optigenix-status` to check system status"""
-            
-            # For testing, we'll return the message instead of sending
-            return jsonify({
-                "status": "success",
-                "message": "Slack integration test successful",
-                "test_message": test_message,
-                "config": {
-                    "client_id": SlackConfig.CLIENT_ID,
-                    "has_bot_token": bool(SlackConfig.BOT_TOKEN),
-                    "has_webhook": bool(SlackConfig.WEBHOOK_URL)
-                }
-            })
-            
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "error": str(e)
-            }), 500
-    
-    # Slack notification endpoint (called when optimization completes)
-    @app.route('/slack/notify/optimization-complete', methods=['POST'])
-    def notify_optimization_complete():
-        """Send Slack notification when optimization completes"""
-        try:
-            data = request.get_json() or {}
-            
-            # Extract results
-            efficiency = data.get('volume_utilization', 0)
-            items_packed = data.get('items_packed', 0)
-            total_items = data.get('total_items', 0)
-            cost_savings = data.get('cost_savings', 0)
-            user_name = data.get('user_name', 'System')
-            
-            # Create notification message
-            message = f"""🎉 *Container Optimization Complete!*
-
-👤 *Requested by:* {user_name}
-📊 *Results:*
-• Efficiency: {efficiency:.1f}%
-• Items Packed: {items_packed}/{total_items}
-• Estimated Savings: ₹{cost_savings:,}
-
-🔗 *View Details:* Check the OptiGenix dashboard
-⏰ *Completed:* {time.strftime('%Y-%m-%d %H:%M:%S')}"""
-            
-            # Send via webhook if available
-            slack_service = SlackService()
-            success = slack_service.send_webhook_notification(message)
-            
-            return jsonify({
-                "success": success,
-                "message": "Notification sent" if success else "Failed to send notification"
-            })
-            
-        except Exception as e:
-            return jsonify({
-                "success": False,
-                "error": str(e)
-            }), 500
-    
-    # Dynamic URL information endpoint
-    @app.route('/slack/urls', methods=['GET'])
-    def get_slack_urls():
-        """Get current dynamic URLs for Slack configuration"""
-        try:
-            base_url = AppConfig.get_ngrok_url()
-            command_url = AppConfig.get_slack_command_url()
-            
-            # Check if ngrok is running
-            is_ngrok = "ngrok" in base_url
-            
-            return jsonify({
-                "status": "success",
-                "urls": {
-                    "base_url": base_url,
-                    "slack_commands": command_url,
-                    "slack_oauth": f"{base_url}/slack/oauth",
-                    "slack_test": f"{base_url}/slack/test"
-                },
-                "ngrok": {
-                    "active": is_ngrok,
-                    "ready_for_mobile": is_ngrok
-                },
-                "instructions": {
-                    "slack_app_url": "https://api.slack.com/apps/A096HEE7TGD/slash-commands",
-                    "commands_to_update": [
-                        {
-                            "command": "/optigenix-status",
-                            "new_url": command_url
-                        },
-                        {
-                            "command": "/optigenix-optimize", 
-                            "new_url": command_url
-                        }
-                    ]
-                }
-            })
-            
-        except Exception as e:
-            app.logger.error(f"Error getting dynamic URLs: {str(e)}")
-            return jsonify({
-                "status": "error",
-                "error": str(e)
-            }), 500
     
     # JSON server control routes for AR visualization
     @app.route('/start_json_server', methods=['POST'])

@@ -14,6 +14,16 @@ weather_service = WeatherService()
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for route temperature server"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'route_temperature_server',
+        'timestamp': datetime.now().isoformat(),
+        'port': 5001
+    })
+
 @app.route('/calculate_route', methods=['POST'])
 def calculate_route():
     try:

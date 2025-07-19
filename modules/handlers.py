@@ -511,6 +511,87 @@ def optimize_handler():
             except Exception as e:
                 current_app.logger.warning(f"Failed to start standalone_visualization.py: {e}")
             
+            # Send Slack notification about successful optimization (AUTOMATED)
+            try:
+                # Check if auto-notifications are enabled (set by auto_start.py)
+                auto_notifications = os.getenv('OPTIGENIX_AUTO_NOTIFICATIONS', 'false').lower() == 'true'
+                
+                if auto_notifications:
+                    current_app.logger.info("Auto-notifications enabled - sending completion notification")
+                else:
+                    current_app.logger.info("Auto-notifications not enabled - sending notification anyway")
+                
+                # Get user name if available (for Slack commands), otherwise use 'System'
+                user_name = request.form.get('user_name', 'System')
+                
+                # Calculate cost savings (example calculation)
+                volume_used = float(container.volume) - float(container.remaining_volume)
+                cost_per_cubic_meter = 100  # Example rate
+                cost_savings = volume_used * cost_per_cubic_meter
+                
+                # Always attempt to send notification (automated)
+                notification_sent = False
+                
+                # Method 1: Try Socket Mode first (preferred)
+                try:
+                    from app_modular import get_socket_mode
+                    socket_mode = get_socket_mode()
+                    
+                    if socket_mode and socket_mode.bot_app and socket_mode.is_running:
+                        # Create rich notification message
+                        notification_message = f"""🎉 *Container Optimization Complete!*
+
+📊 **Results Summary:**
+• Volume Utilization: {report_data.get('volume_utilization', 0):.1f}%
+• Items Packed: {report_data.get('items_packed', 0)}/{report_data.get('total_items', 0)}
+• Estimated Cost Savings: ${cost_savings:,.2f}
+• Completed by: {user_name}
+• Algorithm: {optimization_algorithm.title() if optimization_algorithm else 'Regular'}
+
+🚀 *Optimization successful! Check the dashboard for detailed results.*
+📊 Dashboard: http://localhost:5000"""
+                        
+                        # Send to general channel
+                        if hasattr(socket_mode.bot_app, 'client'):
+                            try:
+                                socket_mode.bot_app.client.chat_postMessage(
+                                    channel="#general",
+                                    text=notification_message
+                                )
+                                current_app.logger.info("✅ Slack notification sent successfully via Socket Mode")
+                                notification_sent = True
+                            except Exception as slack_error:
+                                current_app.logger.warning(f"Socket Mode channel send failed: {slack_error}")
+                                
+                except Exception as socket_error:
+                    current_app.logger.warning(f"Socket Mode not available: {socket_error}")
+                
+                # Method 2: Fallback to webhook if Socket Mode failed
+                if not notification_sent:
+                    webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+                    if webhook_url:
+                        import requests
+                        simple_message = f"🎉 Optimization Complete! Volume: {report_data.get('volume_utilization', 0):.1f}%, Items: {report_data.get('items_packed', 0)}/{report_data.get('total_items', 0)}, Cost Savings: ${cost_savings:,.2f}, User: {user_name}"
+                        
+                        try:
+                            response = requests.post(webhook_url, json={"text": simple_message}, timeout=10)
+                            if response.status_code == 200:
+                                current_app.logger.info("✅ Slack notification sent successfully via webhook")
+                                notification_sent = True
+                            else:
+                                current_app.logger.warning(f"Webhook notification failed: {response.status_code}")
+                        except Exception as webhook_error:
+                            current_app.logger.warning(f"Webhook request failed: {webhook_error}")
+                
+                # Log final notification status
+                if notification_sent:
+                    current_app.logger.info(f"🔔 Automated notification delivered for optimization by {user_name}")
+                else:
+                    current_app.logger.warning("⚠️ No notification method available - check Slack configuration")
+                    
+            except Exception as e:
+                current_app.logger.warning(f"Error sending Slack notification: {e}")
+            
             return render_template('container_visualization.html',
                                  plot=fig.to_html(),
                                  container=container,

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-🎉 OptiGenix Slack Integration - SUCCESS REPORT
-==================================================
-Your Slack integration is working perfectly!
+🎉 OptiGenix Socket Mode Integration - STATUS REPORT
+===================================================
+Socket Mode integration status and setup verification
 """
 
 import os
-import requests
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -16,70 +15,19 @@ load_dotenv()
 def print_success_header():
     """Print success header"""
     print("🎉" * 20)
-    print("🚛 OPTIGENIX SLACK INTEGRATION SUCCESS! 🚛")
+    print("🚛 OPTIGENIX SOCKET MODE STATUS 🚛")
     print("🎉" * 20)
-    print(f"📅 Tested on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-def test_working_commands():
-    """Test the working Slack commands"""
-    print("\n✅ WORKING SLACK COMMANDS:")
-    print("=" * 40)
-    
-    commands = [
-        {
-            'command': '/optigenix-status',
-            'text': '',
-            'description': '📊 Check system status and metrics'
-        },
-        {
-            'command': '/optigenix-optimize', 
-            'text': 'urgent',
-            'description': '🚀 Start container optimization'
-        }
-    ]
-    
-    for i, cmd in enumerate(commands, 1):
-        print(f"\n{i}. Command: {cmd['command']}")
-        print(f"   Purpose: {cmd['description']}")
-        
-        test_data = {
-            'token': 'test_token',
-            'team_id': 'T096G508U0N',
-            'channel_id': 'C1234567890',
-            'user_id': 'U1234567890',
-            'user_name': 'test_user',
-            'command': cmd['command'],
-            'text': cmd['text'],
-            'response_url': 'https://hooks.slack.com/commands/test'
-        }
-        
-        try:
-            response = requests.post(
-                "http://localhost:5000/slack/commands", 
-                data=test_data,
-                timeout=5
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                print(f"   Status: ✅ WORKING (HTTP {response.status_code})")
-                print(f"   Response: {result.get('text', '')[:80]}...")
-            else:
-                print(f"   Status: ⚠️ HTTP {response.status_code}")
-                
-        except Exception as e:
-            print(f"   Status: ❌ Error - {e}")
+    print(f"📅 Checked on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 def show_configuration_status():
-    """Show current configuration status"""
-    print("\n🔧 CONFIGURATION STATUS:")
+    """Show current Socket Mode configuration status"""
+    print("\n🔧 SOCKET MODE CONFIGURATION:")
     print("=" * 40)
     
     configs = [
-        ('SLACK_CLIENT_SECRET', 'Client Secret'),
-        ('SLACK_SIGNING_SECRET', 'Signing Secret'),
         ('SLACK_BOT_TOKEN', 'Bot Token'),
-        ('SLACK_WEBHOOK_URL', 'Webhook URL')
+        ('SLACK_APP_TOKEN', 'App-Level Token (Socket Mode)'),
+        ('SLACK_SIGNING_SECRET', 'Signing Secret')
     ]
     
     for env_var, label in configs:
@@ -88,66 +36,89 @@ def show_configuration_status():
             print(f"✅ {label}: Configured (...{value[-8:]})")
         else:
             print(f"❌ {label}: Missing")
+    
+    # Check if Socket Mode is properly configured
+    bot_token = os.getenv('SLACK_BOT_TOKEN')
+    app_token = os.getenv('SLACK_APP_TOKEN')
+    
+    if bot_token and app_token:
+        print(f"\n✅ Socket Mode: Ready to use!")
+    else:
+        print(f"\n❌ Socket Mode: Missing required tokens")
 
-def show_next_steps():
-    """Show what to do next"""
-    print("\n🚀 NEXT STEPS FOR SLACK APP:")
+def show_socket_mode_benefits():
+    """Show benefits of Socket Mode"""
+    print("\n� SOCKET MODE BENEFITS:")
+    print("=" * 40)
+    
+    benefits = [
+        ("✅ Zero URL Configuration", "No ngrok or public URLs needed"),
+        ("✅ 100% Automated", "Works instantly after token setup"),
+        ("✅ Mobile Ready", "Works on Slack mobile app immediately"),
+        ("✅ Secure Connection", "Direct WebSocket to Slack servers"),
+        ("✅ Auto Reconnection", "Handles network issues automatically"),
+        ("✅ No Manual Updates", "Commands work without URL changes")
+    ]
+    
+    for benefit, description in benefits:
+        print(f"{benefit:25} → {description}")
+
+def show_setup_instructions():
+    """Show setup instructions for Socket Mode"""
+    print("\n�️ SOCKET MODE SETUP:")
     print("=" * 40)
     
     steps = [
-        "1. 🤖 Enable Bot User in Slack App Settings",
-        "   → https://api.slack.com/apps/A096HEE7TGD/app-home",
-        "   → Toggle 'Always Show My Bot as Online' to ON",
+        "1. 🔑 Get App-Level Token:",
+        "   → https://api.slack.com/apps/A096HEE7TGD/general",
+        "   → Scroll to 'App-Level Tokens'",
+        "   → Generate token with 'connections:write' scope",
         "",
-        "2. 🔐 Add OAuth Scopes:",
-        "   → https://api.slack.com/apps/A096HEE7TGD/oauth", 
-        "   → Add: chat:write, commands, incoming-webhook",
+        "2. � Enable Socket Mode:",
+        "   → https://api.slack.com/apps/A096HEE7TGD/socket-mode",
+        "   → Toggle 'Enable Socket Mode' to ON",
         "",
-        "3. ⚡ Create Slash Commands:",
-        "   → https://api.slack.com/apps/A096HEE7TGD/slash-commands",
-        "   → /optigenix-status → http://localhost:5000/slack/commands",
-        "   → /optigenix-optimize → http://localhost:5000/slack/commands",
+        "3. 📝 Update .env file:",
+        "   → SLACK_BOT_TOKEN=xoxb-your-bot-token",
+        "   → SLACK_APP_TOKEN=xapp-1-your-app-level-token",
         "",
-        "4. 🚀 Install to Workspace:",
-        "   → https://api.slack.com/apps/A096HEE7TGD/install-on-team",
-        "   → Click 'Install to Workspace'"
+        "4. 🚀 Start the app:",
+        "   → python slack_socket_mode.py",
+        "   → OR python start_dynamic_slack.py"
     ]
     
     for step in steps:
         print(step)
 
-def show_testing_summary():
-    """Show what's been tested and working"""
-    print("\n📋 TESTING SUMMARY:")
+def show_available_commands():
+    """Show available Slack commands"""
+    print("\n� AVAILABLE COMMANDS:")
     print("=" * 40)
     
-    tests = [
-        ("✅ Flask Server", "Running on localhost:5000"),
-        ("✅ Environment Variables", "All Slack credentials loaded"),
-        ("✅ Slash Command Handler", "Processing commands correctly"),
-        ("✅ Response Formatting", "Slack-compatible JSON responses"),
-        ("✅ User Recognition", "Identifying Slack users"),
-        ("✅ Command Logging", "All requests logged properly")
+    commands = [
+        ("/optigenix-status", "Check system status with interactive buttons"),
+        ("/optigenix-optimize [priority]", "Start container optimization"),
+        ("@OptiGenix status", "Quick status via mention"),
+        ("@OptiGenix help", "Show help information")
     ]
     
-    for test, result in tests:
-        print(f"{test:25} → {result}")
+    for command, description in commands:
+        print(f"• {command:30} → {description}")
 
 def main():
-    """Main test function"""
+    """Main status function"""
     print_success_header()
     show_configuration_status()
-    test_working_commands()
-    show_testing_summary()
-    show_next_steps()
+    show_socket_mode_benefits()
+    show_available_commands()
+    show_setup_instructions()
     
     print("\n🎊 CONCLUSION:")
     print("=" * 40)
-    print("Your OptiGenix Slack integration is READY!")
-    print("✅ All backend code is working perfectly")
-    print("✅ Local testing shows 100% success rate")
-    print("📋 Just need to configure the Slack app settings")
-    print("🚀 Then you're ready for the hackathon demo!")
+    print("✅ HTTP endpoints (Method 2) have been removed")
+    print("🔗 Only Socket Mode (Method 1) is now available")
+    print("� Zero configuration - just add tokens and go!")
+    print("� Perfect for demos and mobile usage")
     
     print(f"\n{'🎉' * 20}")
 
