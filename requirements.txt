@@ -1,0 +1,50 @@
+# Flask and web application dependencies
+flask>=2.2.0
+flask-socketio>=5.3.0
+flask-cors>=3.0.10
+Werkzeug>=2.2.0
+Jinja2>=3.1.0
+itsdangerous>=2.1.0
+
+# Production WSGI server
+gunicorn>=20.1.0
+
+# HTTP and API handling
+requests>=2.28.0
+
+# Data processing and computation
+numpy>=1.24.0
+pandas>=1.5.3
+plotly>=5.13.0
+
+# System utilities
+psutil==5.9.0
+
+# Routing and visualization dependencies
+dash>=2.9.0
+dash-leaflet>=0.1.23
+polyline>=2.0.0
+tenacity>=8.2.0
+
+# Documentation
+Sphinx==4.3.2
+sphinx-rtd-theme==1.0.0
+
+# Development and testing
+pytest==6.2.5
+pytest-cov==2.12.1
+black==21.9b0
+flake8==4.0.1
+
+# Machine learning (if used)
+scikit-learn>=1.3.0
+scipy>=1.10.0
+
+# Google Gemini API
+google-generativeai>=0.8.0
+
+# Environment configuration
+python-dotenv>=1.0.0
+
+# Additional dependencies for production
+eventlet>=0.33.0

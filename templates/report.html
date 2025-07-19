@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GravicARgo - Detailed Packing Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <style>
+      :root {
+        --primary: #0b2447;
+        --secondary: #19376d;
+        --accent: #576cbc;
+        --light: #f8f9fa;
+        --dark: #212529;
+        --success: #2ecc71;
+        --warning: #f1c40f;
+        --danger: #e74c3c;
+        --card-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        --transition: all 0.3s ease;
+        --card-radius: 16px;
+        --gradient: linear-gradient(135deg, var(--primary), var(--accent));
+      }
+      
+      body {
+        background: #f8f9fa;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      
+      .navbar {
+        background: var(--gradient);
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        padding: 1rem;
+      }
+      
+      .navbar-brand {
+        font-weight: 700;
+      }
+      
+      .metric-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-radius: var(--card-radius);
+        border: none;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+      }
+      
+      .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+      }
+      
+      .metric-card .card-body {
+        padding: 1.5rem;
+      }
+      
+      .card-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--secondary);
+      }
+      
+      .display-6 {
+        font-weight: 700;
+        margin-top: 0.5rem;
+        color: var(--primary);
+        font-size: 2.5rem;
+      }
+      
+      .card {
+        border: none;
+        border-radius: var(--card-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+      }
+      
+      .card-header {
+        background: white;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: 1.25rem 1.5rem;
+      }
+      
+      .stability-warning {
+        color: var(--danger);
+      }
+      
+      .chart-container {
+        height: 300px;
+        margin: 0;
+        border-radius: 0 0 var(--card-radius) var(--card-radius);
+      }
+      
+      .filter-controls {
+        padding: 0.5rem 0;
+      }
+      
+      .chart-controls {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      
+      .table-responsive {
+        border-radius: var(--card-radius);
+      }
+      
+      .table {
+        margin-bottom: 0;
+      }
+      
+      .table thead th {
+        background-color: rgba(0,0,0,0.02);
+        font-weight: 600;
+        border-top: none;
+        border-bottom: 2px solid rgba(0,0,0,0.05);
+      }
+      
+      .table tbody tr:hover {
+        background-color: rgba(87, 108, 188, 0.05);
+      }
+      
+      .btn-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        box-shadow: 0 4px 10px rgba(11, 36, 71, 0.2);
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+      }
+      
+      .btn-primary:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(11, 36, 71, 0.25);
+      }
+      
+      .btn-secondary {
+        background: white;
+        color: var(--primary);
+        border-color: #e2e8f0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+      }
+      
+      .btn-secondary:hover {
+        background: #f8f9fa;
+        color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      }
+      
+      .action-buttons {
+        padding: 1.5rem;
+        background: white;
+        border-radius: var(--card-radius);
+        box-shadow: var(--card-shadow);
+        margin-top: 1.5rem;
+        margin-bottom: 3rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+      }
+      
+      .comparison-toggle {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: var(--primary);
+        color: white;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        cursor: pointer;
+        z-index: 100;
+        transition: var(--transition);
+      }
+      
+      .comparison-toggle:hover {
+        transform: scale(1.1);
+        background: var(--accent);
+      }
+      
+      .comparison-toggle i {
+        font-size: 1.5rem;
+      }
+      
+      .metric-icon {
+        font-size: 2rem;
+        color: var(--accent);
+        margin-bottom: 1rem;
+        width: 60px;
+        height: 60px;
+        background: rgba(87, 108, 188, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        margin: 0 auto 1rem;
+      }
+      
+      .section-header {
+        position: relative;
+        margin-bottom: 2rem;
+        padding-bottom: 0.75rem;
+      }
+      
+      .section-header:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 4px;
+        width: 60px;
+        background: var(--gradient);
+        border-radius: 2px;
+      }
+      
+      .layer-distribution-3d {
+        position: relative;
+        height: 350px;
+        perspective: 1000px;
+        margin-top: 1rem;
+      }
+      
+      .layer-stack {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        transform: rotateX(60deg) rotateZ(-30deg);
+        transition: transform 0.5s ease;
+      }
+      
+      .layer-plate {
+        position: absolute;
+        width: 80%;
+        height: 80%;
+        left: 10%;
+        background: rgba(87, 108, 188, 0.15);
+        border: 1px solid rgba(87, 108, 188, 0.3);
+        transform-style: preserve-3d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: var(--primary);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      .layer-plate:hover {
+        background: rgba(87, 108, 188, 0.25);
+        transform: translateZ(10px);
+      }
+      
+      /* Mobile Responsiveness */
+      @media (max-width: 992px) {
+        .chart-container {
+          height: 250px;
+        }
+        
+        .comparison-toggle {
+          width: 50px;
+          height: 50px;
+          bottom: 20px;
+          right: 20px;
+        }
+        
+        .comparison-toggle i {
+          font-size: 1.2rem;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .chart-container {
+          height: 220px;
+        }
+        
+        .display-6 {
+          font-size: 2rem;
+        }
+        
+        .metric-icon {
+          width: 50px;
+          height: 50px;
+          font-size: 1.5rem;
+        }
+        
+        .action-buttons {
+          flex-direction: column;
+        }
+        
+        .btn {
+          width: 100%;
+        }
+      }
+      
+      @media (max-width: 576px) {
+        .chart-container {
+          height: 200px;
+        }
+        
+        .display-6 {
+          font-size: 1.75rem;
+        }
+        
+        .card-header {
+          padding: 1rem;
+        }
+        
+        .card-body {
+          padding: 1rem;
+        }
+        
+        .section-header {
+          margin-bottom: 1.5rem;
+        }
+        
+        .navbar {
+          padding: 0.75rem 1rem;
+        }
+      }
+      
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      
+      .fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+      }
+      
+        .slide-up {
+          animation: slideUp 0.6s ease-out forwards;
+        }
+  </style>
+    </head>
+    <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark mb-4">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-cube me-2"></i>GravicARgo
+        </a>
+        <div>
+          <a href="/" class="btn btn-sm btn-outline-light">
+            <i class="fas fa-home me-1"></i>Home
+          </a>
+          <a href="/optimize" class="btn btn-sm btn-outline-light ms-2">
+            <i class="fas fa-cogs me-1"></i>New Optimization
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container my-4">
+      <h1 class="text-center mb-4 slide-up">Detailed Packing Report</h1>
+
+      <!-- Summary Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-4 mb-md-0" data-aos="fade-up" data-aos-delay="100">
+          <div class="card metric-card text-center">
+            <div class="card-body">
+              <div class="metric-icon">
+                <i class="fas fa-percentage"></i>
+              </div>
+              <h5 class="card-title">Volume Utilization</h5>
+              <p class="display-6">{{ report.summary.volume_utilization }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-4 mb-md-0" data-aos="fade-up" data-aos-delay="200">
+          <div class="card metric-card text-center">
+            <div class="card-body">
+              <div class="metric-icon">
+                <i class="fas fa-balance-scale"></i>
+              </div>
+              <h5 class="card-title">Weight Balance</h5>
+              <p class="display-6">{{ report.summary.weight_balance_score }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="300">
+          <div class="card metric-card text-center">
+            <div class="card-body">
+              <div class="metric-icon">
+                <i class="fas fa-cubes"></i>
+              </div>
+              <h5 class="card-title">Items Packed</h5>
+              <p class="display-6">{{ report.packed_items|length }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="400">
+          <div class="card metric-card text-center">
+            <div class="card-body">
+              <div class="metric-icon">
+                <i class="fas fa-temperature-high"></i>
+              </div>
+              <h5 class="card-title">Temp Control</h5>
+              <p class="display-6">95%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Analysis -->
+      <div class="row">
+        <!-- Layer Distribution -->
+        <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="card-title mb-0">Layer Distribution</h5>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="layerViewToggle" data-bs-toggle="dropdown">
+                  <i class="fas fa-eye me-1"></i>View Options
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" id="viewChart">Chart View</a></li>
+                  <li><a class="dropdown-item" href="#" id="view3D">3D View</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="filter-controls d-flex justify-content-between align-items-center mb-3">
+                <select class="form-select form-select-sm w-auto" id="layerFilter">
+                  <option value="all">All Layers</option>
+                  {% for layer_height in report.placement_analysis.layer_distribution %}
+                  <option value="{{ layer_height }}">Layer {{ loop.index }} ({{ layer_height }}m)</option>
+                  {% endfor %}
+                </select>
+                <div class="chart-controls">
+                  <button class="btn btn-sm btn-outline-primary" id="toggleLabels">
+                    <i class="fas fa-tag me-1"></i>Toggle Labels
+                  </button>
+                </div>
+              </div>
+              <div id="layerChart" class="chart-container"></div>
+              <div id="layer3DView" class="layer-distribution-3d d-none">
+                <div class="layer-stack" id="layerStack">
+                  <!-- Will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stability Analysis -->
+        <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="card-title mb-0">Stability Analysis</h5>
+              <span class="badge bg-primary">Score: {{ "%.1f"|format(report.placement_analysis.stability_analysis.overall_stability|float) }}</span>
+            </div>
+            <div class="card-body">
+              <div id="stabilityChart" class="chart-container mb-3"></div>
+              
+              {% if report.placement_analysis.stability_analysis.critical_points %}
+              <div class="alert alert-warning">
+                <div class="d-flex align-items-center mb-2">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  <h6 class="mb-0">Critical Points Detected:</h6>
+                </div>
+                <ul class="mb-0">
+                {% for point in report.placement_analysis.stability_analysis.critical_points %}
+                  <li>{{ point.item }} - {{ point.issue }}</li>
+                {% endfor %}
+                </ul>
+              </div>
+              {% else %}
+              <div class="alert alert-success">
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-check-circle me-2"></i>
+                  <span>No stability issues detected</span>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Item Details Table -->
+      <div class="card mb-4" data-aos="fade-up" data-aos-delay="300">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Packed Items Details</h5>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-secondary" id="filterItems">
+              <i class="fas fa-filter me-1"></i>Filter
+            </button>
+            <button class="btn btn-outline-secondary" id="sortItems">
+              <i class="fas fa-sort me-1"></i>Sort
+            </button>
+            <button class="btn btn-outline-secondary" id="exportItems">
+              <i class="fas fa-file-export me-1"></i>Export
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Position</th>
+                  <th>Dimensions</th>
+                  <th>Weight</th>
+                  <th>Stability Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in report.packed_items %}
+                <tr>
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.position|join(', ') }}</td>
+                  <td>{{ item.dimensions|join(' × ') }}</td>
+                  <td>{{ item.weight }} kg</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar {{ 'bg-success' if report.placement_analysis.stability_analysis.item_stability[item.name].overall|float >= 70 else 'bg-warning' if report.placement_analysis.stability_analysis.item_stability[item.name].overall|float >= 40 else 'bg-danger' }}" role="progressbar" style="width: {{ report.placement_analysis.stability_analysis.item_stability[item.name].overall }}%"></div>
+                      </div>
+                      <span class="ms-2">{{ "%.1f"|format(report.placement_analysis.stability_analysis.item_stability[item.name].overall|float) }}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons" data-aos="fade-up" data-aos-delay="400">
+        <a href="/download_report" class="btn btn-primary">
+          <i class="fas fa-download me-2"></i>Download Full Report
+        </a>
+        <a href="/optimize" class="btn btn-secondary">
+          <i class="fas fa-redo me-2"></i>New Optimization
+        </a>
+        <button id="shareReport" class="btn btn-secondary">
+          <i class="fas fa-share-alt me-2"></i>Share Report
+        </button>
+      </div>
+
+      <!-- Comparison Toggle -->
+      <div class="comparison-toggle" id="compareToggle" title="Compare with previous plans">
+        <i class="fas fa-exchange-alt"></i>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+      // Initialize animations
+      AOS.init({
+        duration: 800,
+        once: true,
+        offset: 50
+      });
+
+      // Add visualization scripts for layer distribution and other charts
+      document.addEventListener('DOMContentLoaded', function() {
+        // Layer Distribution Chart
+        var layerData = JSON.parse('{{ report.placement_analysis.layer_distribution|tojson|safe }}');
+        var layers = Object.keys(layerData);
+        var itemCounts = [];
+        
+        for (var i = 0; i < layers.length; i++) {
+          itemCounts.push(layerData[layers[i]].length);
+        }
+
+        // Create enhanced layer distribution chart
+        var colors = [];
+        for (var i = 0; i < layers.length; i++) {
+          colors.push('rgba(87, 108, 188, ' + (0.5 + (i/layers.length) * 0.5) + ')');
+        }
+        
+        var trace = {
+          x: layers,
+          y: itemCounts,
+          type: 'bar',
+          name: 'Items per Layer',
+          marker: {
+            color: colors,
+            line: {
+              color: '#19376d',
+              width: 1
+            }
+          }
+        };
+        
+        var layout = {
+          title: '',
+          margin: { t: 10, r: 10, b: 40, l: 40 },
+          xaxis: {
+            title: 'Layer Height (m)',
+            titlefont: { size: 12 }
+          },
+          yaxis: {
+            title: 'Number of Items',
+            titlefont: { size: 12 }
+          },
+          plot_bgcolor: 'rgba(0,0,0,0)',
+          paper_bgcolor: 'rgba(0,0,0,0)',
+          font: { family: 'Inter, sans-serif' },
+          hovermode: 'closest'
+        };
+        
+        var config = {
+          responsive: true,
+          displayModeBar: false
+        };
+        
+        Plotly.newPlot('layerChart', [trace], layout, config);
+
+        // Create stability chart
+        var stabilityValue = parseFloat('{{ report.placement_analysis.stability_analysis.overall_stability }}');
+        
+        var stabilityTrace = {
+          type: 'indicator',
+          mode: 'gauge+number',
+          value: stabilityValue,
+          gauge: {
+            axis: {
+              range: [0, 100],
+              tickwidth: 1,
+              tickcolor: "darkblue"
+            },
+            bar: { color: getScoreColor(stabilityValue) },
+            bgcolor: "white",
+            borderwidth: 2,
+            bordercolor: "#19376d",
+            steps: [
+              { range: [0, 40], color: 'rgba(231, 76, 60, 0.2)' },
+              { range: [40, 70], color: 'rgba(241, 196, 15, 0.2)' },
+              { range: [70, 100], color: 'rgba(46, 204, 113, 0.2)' }
+            ],
+            threshold: {
+              line: { color: "red", width: 4 },
+              thickness: 0.75,
+              value: 70
+            }
+          },
+          title: {
+            text: "Overall Stability Score",
+            font: { size: 14 }
+          }
+        };
+        
+        var stabilityLayout = {
+          margin: { t: 25, r: 25, l: 25, b: 25 },
+          plot_bgcolor: 'rgba(0,0,0,0)',
+          paper_bgcolor: 'rgba(0,0,0,0)'
+        };
+        
+        Plotly.newPlot('stabilityChart', [stabilityTrace], stabilityLayout, config);
+
+        // View toggle functionality
+        document.getElementById('viewChart').addEventListener('click', function(e) {
+          e.preventDefault();
+          document.getElementById('layerChart').classList.remove('d-none');
+          document.getElementById('layer3DView').classList.add('d-none');
+        });
+
+        document.getElementById('view3D').addEventListener('click', function(e) {
+          e.preventDefault();
+          document.getElementById('layerChart').classList.add('d-none');
+          document.getElementById('layer3DView').classList.remove('d-none');
+          
+          // Create 3D layer stack
+          createLayerStack(layerData);
+        });
+
+        // Create 3D layer visualization
+        function createLayerStack(data) {
+          var stack = document.getElementById('layerStack');
+          stack.innerHTML = '';
+          
+          var layers = Object.keys(data);
+          
+          // Sort layers from bottom to top
+          layers.sort(function(a, b) {
+            return parseFloat(a) - parseFloat(b);
+          });
+          
+          // Create layer plates
+          for (var i = 0; i < layers.length; i++) {
+            var layer = document.createElement('div');
+            layer.className = 'layer-plate';
+            layer.style.transform = 'translateZ(' + (i * 40) + 'px)';
+            layer.setAttribute('data-layer', layers[i]);
+            layer.innerHTML = 'Layer ' + (i+1) + ' (' + data[layers[i]].length + ' items)';
+            stack.appendChild(layer);
+            
+            // Add click event for detailed inspection
+            layer.addEventListener('click', function() {
+              alert('Layer details for ' + this.getAttribute('data-layer') + 'm will be shown here');
+            });
+          }
+        }
+
+        function getScoreColor(score) {
+          if (score >= 70) return 'rgba(46, 204, 113, 0.8)';
+          if (score >= 40) return 'rgba(241, 196, 15, 0.8)';
+          return 'rgba(231, 76, 60, 0.8)';
+        }
+
+        // Add item filtering functionality
+        document.getElementById('filterItems').addEventListener('click', function() {
+          alert('Filtering options coming soon!');
+        });
+
+        // Add sorting functionality
+        document.getElementById('sortItems').addEventListener('click', function() {
+          alert('Sorting options coming soon!');
+        });
+
+        // Add export functionality
+        document.getElementById('exportItems').addEventListener('click', function() {
+          alert('Export options coming soon!');
+        });
+
+        // Share report functionality
+        document.getElementById('shareReport').addEventListener('click', function() {
+          alert('Share functionality coming soon!');
+        });
+
+        // Add comparison toggle functionality
+        document.getElementById('compareToggle').addEventListener('click', function() {
+          alert('Comparison view coming soon!');
+        });
+      });
+    </script>
+  </body>
+</html>
