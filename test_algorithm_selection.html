@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Selection Test</title>
+    <link rel="stylesheet" href="static/css/style-index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Algorithm Selection Test</h2>
+        
+        <!-- Algorithm Selection -->
+        <div class="settings-container">
+          <div class="setting-group">
+            <i class="fas fa-microchip setting-icon"></i>
+            <div class="setting-content">
+              <h4>Optimization Algorithm</h4>
+              <p>Choose between regular packing or AI-enhanced genetic algorithm</p>
+              
+              <div class="algorithm-selection">
+                <div class="algorithm-option" data-algorithm="regular">
+                  <input type="radio" id="algorithm_regular" name="optimization_mode" value="regular" checked style="display: none;">
+                  <div class="algorithm-icon">
+                    <i class="fas fa-box"></i>
+                  </div>
+                  <div class="algorithm-info">
+                    <h5>Regular Packing</h5>
+                    <p>Fast and efficient for simple packing scenarios</p>
+                    <ul class="algorithm-features">
+                      <li><i class="fas fa-check"></i> Quick optimization</li>
+                      <li><i class="fas fa-check"></i> Basic constraints</li>
+                      <li><i class="fas fa-check"></i> Suitable for standard loads</li>
+                    </ul>
+                  </div>
+                  <div class="algorithm-check">
+                    <i class="fas fa-check"></i>
+                  </div>
+                </div>
+
+                <div class="algorithm-option" data-algorithm="genetic">
+                  <input type="radio" id="algorithm_genetic" name="optimization_mode" value="genetic" style="display: none;">
+                  <div class="algorithm-icon">
+                    <i class="fas fa-dna"></i>
+                  </div>
+                  <div class="algorithm-info">
+                    <h5>AI-Enhanced Genetic</h5>
+                    <p>Advanced optimization with machine learning</p>
+                    <ul class="algorithm-features">
+                      <li><i class="fas fa-check"></i> Complex constraints</li>
+                      <li><i class="fas fa-check"></i> Better space utilization</li>
+                      <li><i class="fas fa-check"></i> Temperature & weight optimization</li>
+                    </ul>
+                  </div>
+                  <div class="algorithm-check">
+                    <i class="fas fa-check"></i>
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" id="optimization_algorithm" name="optimization_algorithm" value="regular">
+
+              <!-- Genetic Algorithm Controls -->
+              <div class="genetic-controls mt-4" style="display: none;">
+                <h5 class="mb-3">Genetic Algorithm Settings</h5>
+                <p>Testing genetic controls visibility</p>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Test page loaded');
+            
+            function initializeAlgorithmSelection() {
+                const algorithmOptions = document.querySelectorAll('.algorithm-option');
+                const optimizationAlgorithmInput = document.getElementById('optimization_algorithm');
+                const geneticControls = document.querySelector('.genetic-controls');
+                
+                console.log('Initializing algorithm selection. Found options:', algorithmOptions.length);
+                
+                algorithmOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const algorithm = this.dataset.algorithm;
+                        console.log('Algorithm selected:', algorithm);
+                        
+                        // Remove selected class from all options
+                        algorithmOptions.forEach(opt => opt.classList.remove('selected'));
+                        
+                        // Add selected class to clicked option
+                        this.classList.add('selected');
+                        
+                        // Update hidden input
+                        if (optimizationAlgorithmInput) {
+                            optimizationAlgorithmInput.value = algorithm;
+                            console.log('Hidden input updated to:', algorithm);
+                        }
+                        
+                        // Update radio button
+                        const radioButton = this.querySelector('input[type="radio"]');
+                        if (radioButton) {
+                            radioButton.checked = true;
+                            console.log('Radio button checked for:', algorithm);
+                        }
+                        
+                        // Show/hide genetic controls
+                        if (geneticControls) {
+                            if (algorithm === 'genetic') {
+                                geneticControls.style.display = 'block';
+                                console.log('Genetic controls shown');
+                            } else {
+                                geneticControls.style.display = 'none';
+                                console.log('Genetic controls hidden');
+                            }
+                        }
+                    });
+                });
+                
+                // Set default selection (regular algorithm)
+                const defaultOption = document.querySelector('.algorithm-option[data-algorithm="regular"]');
+                if (defaultOption) {
+                    defaultOption.click();
+                    console.log('Default algorithm (regular) selected');
+                }
+            }
+            
+            initializeAlgorithmSelection();
+        });
+    </script>
+</body>
+</html>

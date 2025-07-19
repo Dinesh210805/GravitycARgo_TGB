@@ -812,3 +812,28 @@ def index():
         'transport_modes': format_transport_modes()
     }
     return render_template('index.html', data=data)
+
+def download_ar_apk():
+    """Handle AR app APK download"""
+    try:
+        apk_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'AR_OptigeniX_app', 'Optigenix AR app.apk')
+        
+        if os.path.exists(apk_path):
+            return send_file(
+                apk_path,
+                as_attachment=True,
+                download_name='OptiGenix_AR_App.apk',
+                mimetype='application/vnd.android.package-archive'
+            )
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'AR app APK not found'
+            }), 404
+            
+    except Exception as e:
+        current_app.logger.error(f"Error downloading APK: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

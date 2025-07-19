@@ -1961,6 +1961,98 @@ input:checked + .toggle-slider:before {
   border-color: rgba(59, 130, 246, 0.2);
 }
 
+/* Algorithm Selection Container */
+.algorithm-selection {
+  display: flex;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.algorithm-option {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.algorithm-option:hover {
+  border-color: var(--accent);
+  background: rgba(15, 23, 42, 0.8);
+  transform: translateY(-2px);
+}
+
+.algorithm-option.selected {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.algorithm-option.selected .algorithm-check {
+  display: flex;
+}
+
+.algorithm-icon {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.algorithm-info {
+  flex: 1;
+}
+
+.algorithm-info h5 {
+  color: var(--light);
+  margin-bottom: 0.5rem;
+}
+
+.algorithm-info p {
+  color: var(--gray);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.algorithm-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.algorithm-features li {
+  display: flex;
+  align-items: center;
+  color: var(--gray);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.algorithm-features li i {
+  color: var(--success);
+  margin-right: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.algorithm-check {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.algorithm-check i {
+  color: white;
+  font-size: 0.8rem;
+}
+
 .new-badge {
   position: absolute;
   top: 0;
