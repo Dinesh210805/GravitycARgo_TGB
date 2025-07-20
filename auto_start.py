@@ -106,12 +106,33 @@ class OptiGenixAutoStarter:
                 except Exception as e:
                     self.log(f"Flask server error: {e}", "ERROR")
             
+            # Start HTTPS server for mobile access
+            def run_https_server():
+                try:
+                    self.log("Starting HTTPS server for mobile access...", "INFO")
+                    import subprocess
+                    import sys
+                    https_process = subprocess.Popen([
+                        sys.executable, 
+                        str(self.script_dir / "https_server.py")
+                    ], 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE)
+                    self.services['https'] = https_process
+                    self.log("HTTPS server started for mobile access", "SUCCESS")
+                except Exception as e:
+                    self.log(f"HTTPS server error: {e}", "WARNING")
+            
             # Start Flask in background thread
             flask_thread = threading.Thread(target=run_flask, daemon=True)
             flask_thread.start()
             
-            # Give Flask time to start
-            time.sleep(3)
+            # Start HTTPS server in background thread 
+            https_thread = threading.Thread(target=run_https_server, daemon=True)
+            https_thread.start()
+            
+            # Give servers time to start
+            time.sleep(5)
             
             # Store thread reference instead of process
             self.services['main'] = flask_thread
