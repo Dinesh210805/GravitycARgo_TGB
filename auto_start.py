@@ -72,17 +72,28 @@ class OptiGenixAutoStarter:
             self.log("Loading OptiGenix Flask application...", "INFO")
             
             # Import and start the Flask app directly (no subprocess)
-            from app_modular import create_app, create_socketio
+            from app_modular import create_app, create_socketio, get_socket_mode
             
             app = create_app()
             socketio = create_socketio(app)
             
             self.log("Flask app created successfully", "SUCCESS")
-            self.log("Socket Mode integration loaded", "INFO")
             
-            # Start a background thread to monitor Flask readiness
-            import threading
+            # Initialize and start Socket Mode integration
+            socket_mode = get_socket_mode()
+            if socket_mode:
+                self.log("Socket Mode integration loaded", "INFO")
+                
+                # Start Socket Mode in background
+                socket_mode_started = socket_mode.start_socket_mode()
+                if socket_mode_started:
+                    self.log("Socket Mode started successfully", "SUCCESS")
+                else:
+                    self.log("Socket Mode failed to start", "WARNING")
+            else:
+                self.log("Socket Mode not available", "WARNING")
             
+            # Start Flask in background thread
             def run_flask():
                 try:
                     self.log("Starting Flask server on http://localhost:5000", "INFO")
@@ -303,10 +314,14 @@ class OptiGenixAutoStarter:
                 time.sleep(30)  # Check every 30 seconds
                 
                 # Check if main service is still running
-                main_process = self.services.get('main')
-                if main_process and main_process.poll() is not None:
-                    self.log("Main service stopped unexpectedly", "WARNING")
-                    # Could implement restart logic here
+                main_service = self.services.get('main')
+                if main_service:
+                    if hasattr(main_service, 'is_alive'):  # It's a thread
+                        if not main_service.is_alive():
+                            self.log("Main service thread stopped unexpectedly", "WARNING")
+                    elif hasattr(main_service, 'poll'):  # It's a process
+                        if main_service.poll() is not None:
+                            self.log("Main service process stopped unexpectedly", "WARNING")
                     
             except KeyboardInterrupt:
                 break

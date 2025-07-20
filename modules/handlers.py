@@ -551,15 +551,54 @@ def optimize_handler():
 🚀 *Optimization successful! Check the dashboard for detailed results.*
 📊 Dashboard: http://localhost:5000"""
                         
-                        # Send to general channel
+                        # Discover and send to best available channel
                         if hasattr(socket_mode.bot_app, 'client'):
                             try:
-                                socket_mode.bot_app.client.chat_postMessage(
-                                    channel="#general",
-                                    text=notification_message
-                                )
-                                current_app.logger.info("✅ Slack notification sent successfully via Socket Mode")
-                                notification_sent = True
+                                # Discover available channels
+                                target_channel = None
+                                try:
+                                    channels_response = socket_mode.bot_app.client.conversations_list(
+                                        types="public_channel,private_channel",
+                                        limit=50
+                                    )
+                                    
+                                    if channels_response["ok"]:
+                                        available_channels = []
+                                        for channel in channels_response["channels"]:
+                                            # Check if bot is member or it's a public channel
+                                            if channel.get("is_member", False) or not channel.get("is_private", True):
+                                                available_channels.append({
+                                                    "id": channel["id"], 
+                                                    "name": channel["name"]
+                                                })
+                                        
+                                        # Choose the best channel to post to
+                                        if available_channels:
+                                            # Try to find preferred channels first
+                                            for ch in available_channels:
+                                                if ch["name"] in ["all-gravitycargos-space"]:
+                                                    target_channel = ch["id"]
+                                                    current_app.logger.info(f"✅ Using channel: #{ch['name']}")
+                                                    break
+                                            
+                                            # If no preferred channel, use the first available
+                                            if not target_channel:
+                                                target_channel = available_channels[0]["id"]
+                                                current_app.logger.info(f"✅ Using channel: #{available_channels[0]['name']}")
+                                except Exception as discovery_error:
+                                    current_app.logger.warning(f"Channel discovery failed: {discovery_error}")
+                                
+                                # Send notification to discovered channel
+                                if target_channel:
+                                    socket_mode.bot_app.client.chat_postMessage(
+                                        channel=target_channel,
+                                        text=notification_message
+                                    )
+                                    current_app.logger.info("✅ Slack notification sent successfully via Socket Mode")
+                                    notification_sent = True
+                                else:
+                                    current_app.logger.warning("No accessible channels found for Socket Mode notification")
+                                    
                             except Exception as slack_error:
                                 current_app.logger.warning(f"Socket Mode channel send failed: {slack_error}")
                                 

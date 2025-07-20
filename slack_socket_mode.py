@@ -40,8 +40,57 @@ class OptiGenixSlackBot:
         if not all([self.app.client.token, self.app_token]):
             raise ValueError("Missing required Slack tokens. Check your .env file.")
         
+        # Store references for access from other modules
+        self.bot_app = self.app
+        self.is_running = False
+        
+        # Discover available channels
+        self.target_channel = self._discover_target_channel()
+        
         self.setup_commands()
         self.setup_events()
+    
+    def _discover_target_channel(self):
+        """Discover an available channel for notifications"""
+        try:
+            # Get list of channels the bot can access
+            channels_response = self.app.client.conversations_list(
+                types="public_channel,private_channel",
+                limit=100
+            )
+            
+            if channels_response["ok"]:
+                available_channels = []
+                for channel in channels_response["channels"]:
+                    # Check if bot is member or it's a public channel
+                    if channel.get("is_member", False) or not channel.get("is_private", True):
+                        available_channels.append({
+                            "id": channel["id"], 
+                            "name": channel["name"]
+                        })
+                        
+                        # First priority: all-gravitycargos-space
+                        if channel["name"] == "all-gravitycargos-space":
+                            print(f"✅ Found target channel: #{channel['name']}")
+                            return channel["id"]
+                
+                # Second priority: general, random, test
+                for channel in available_channels:
+                    if channel["name"] in ["general", "random", "test"]:
+                        print(f"✅ Using fallback channel: #{channel['name']}")
+                        return channel["id"]
+                
+                # If no preferred channel found, use first available
+                if available_channels:
+                    print(f"✅ Using first available channel: #{available_channels[0]['name']}")
+                    return available_channels[0]["id"]
+            
+            print("⚠️ No accessible channels found, will use webhook fallback")
+            return None
+            
+        except Exception as e:
+            print(f"⚠️ Channel discovery failed: {e}")
+            return None
         
     def setup_commands(self):
         """Setup slash commands - work automatically without URL config"""
@@ -55,36 +104,47 @@ class OptiGenixSlackBot:
                 # Get system status
                 status_info = self._get_system_status()
                 
-                say(blocks=[
+                # Create response with blocks for better formatting
+                response_blocks = [
                     {
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
                             "text": f"🚛 *OptiGenix Container Optimizer Status*\n\n{status_info}"
                         }
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {"type": "plain_text", "text": "🚀 Start Optimization"},
-                                "value": "start_optimization",
-                                "action_id": "quick_optimize"
-                            },
-                            {
-                                "type": "button",
-                                "text": {"type": "plain_text", "text": "📊 View Dashboard"},
-                                "value": "view_dashboard",
-                                "action_id": "open_dashboard"
-                            }
-                        ]
                     }
-                ])
+                ]
+                
+                # Add interactive buttons
+                response_blocks.append({
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {"type": "plain_text", "text": "🚀 Start Optimization"},
+                            "value": "start_optimization",
+                            "action_id": "quick_optimize"
+                        },
+                        {
+                            "type": "button",
+                            "text": {"type": "plain_text", "text": "📊 View Dashboard"},
+                            "value": "view_dashboard",
+                            "action_id": "open_dashboard"
+                        }
+                    ]
+                })
+                
+                # Try to respond in the channel where command was issued
+                say(blocks=response_blocks)
+                logger.info("✅ Status command executed successfully")
                 
             except Exception as e:
                 logger.error(f"Error in status command: {e}")
-                say(f"❌ Error getting status: {str(e)}")
+                # Fallback to simple text response
+                try:
+                    say(f"🚛 *OptiGenix Status:*\n{self._get_system_status()}")
+                except:
+                    say("❌ Error getting system status. Please check the logs.")
         
         @self.app.command("/optigenix-optimize")
         def handle_optimize_command(ack, command, say, logger):
@@ -248,7 +308,29 @@ class OptiGenixSlackBot:
             
             say(completion_message)
             
-            # Also try to trigger the webhook notification if available
+            # Send notification via Socket Mode if channel is available
+            if self.target_channel:
+                try:
+                    notification_message = f"""🎉 *Container Optimization Complete!*
+
+👤 *Requested by:* {user_name}
+📊 *Results:*
+• Efficiency: {efficiency:.1f}%
+• Items Packed: {items_packed}/{total_items}
+• Priority: {priority.upper()}
+
+🔗 *View Details:* Check the OptiGenix dashboard
+⏰ *Completed:* {time.strftime('%Y-%m-%d %H:%M:%S')}"""
+                    
+                    self.app.client.chat_postMessage(
+                        channel=self.target_channel,
+                        text=notification_message
+                    )
+                    print("✅ Socket Mode notification sent successfully!")
+                except Exception as socket_error:
+                    print(f"⚠️ Socket Mode notification failed: {socket_error}")
+            
+            # Also try webhook fallback
             try:
                 from app_modular import SlackService
                 slack_service = SlackService()
@@ -387,22 +469,47 @@ class OptiGenixSlackBot:
         
         try:
             handler = SocketModeHandler(self.app, self.app_token)
+            
+            # Mark as running
+            self.is_running = True
+            
             print("\n🎉 SOCKET MODE ACTIVE!")
             print("🚀 OptiGenix bot is ready for commands!")
             print("💡 Try /optigenix-status in your Slack workspace")
+            print(f"📍 Bot will respond in channel: #{self.target_channel}")
             print("\n⚠️  Keep this terminal open during demo")
             print("🔄 Bot will auto-reconnect if disconnected")
             
-            handler.start()
+            # Start handler in background
+            import threading
+            def run_handler():
+                try:
+                    handler.start()
+                except Exception as e:
+                    print(f"❌ Socket Mode handler error: {e}")
+                    self.is_running = False
+            
+            handler_thread = threading.Thread(target=run_handler, daemon=True)
+            handler_thread.start()
+            
+            # Keep main thread alive
+            try:
+                while self.is_running:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                print("\n🔴 Shutting down OptiGenix bot...")
+                self.is_running = False
             
         except KeyboardInterrupt:
             print("\n🔴 Shutting down OptiGenix bot...")
+            self.is_running = False
         except Exception as e:
             print(f"❌ Error starting Socket Mode: {e}")
             print("\n🔧 Check your environment variables:")
             print("   SLACK_BOT_TOKEN=xoxb-...")
             print("   SLACK_APP_TOKEN=xapp-...")
             print("   SLACK_SIGNING_SECRET=...")
+            self.is_running = False
 
 def main():
     """Main entry point"""

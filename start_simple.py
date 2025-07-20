@@ -61,11 +61,26 @@ def start_flask_app():
         app = create_app()
         socketio = create_socketio(app)
         
-        # Get Socket Mode handler
-        socket_mode = get_socket_mode()
-        
         log("Flask app created successfully", "SUCCESS")
-        log("Socket Mode integration loaded", "SUCCESS")
+        
+        # Start Socket Mode for Slack integration
+        socket_mode = get_socket_mode()
+        if socket_mode:
+            # Start Socket Mode in background thread
+            import threading
+            def start_socket_mode():
+                try:
+                    socket_mode.start_socket_mode()
+                    log("Socket Mode started successfully", "SUCCESS")
+                except Exception as e:
+                    log(f"Socket Mode failed to start: {e}", "WARNING")
+            
+            socket_thread = threading.Thread(target=start_socket_mode, daemon=True)
+            socket_thread.start()
+            log("Socket Mode integration loaded", "SUCCESS")
+        else:
+            log("Socket Mode not available", "WARNING")
+        
         log("Starting Flask server on http://localhost:5000", "INFO")
         
         # Start Flask app
