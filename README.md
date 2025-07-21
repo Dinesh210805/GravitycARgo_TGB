@@ -89,12 +89,7 @@ graph TD
 - **LLM Connector**: Dynamic fitness weight adjustment
 - **Maximal Space Algorithm**: Efficient space utilization tracking
 
-### Infrastructure
-- **Docker**: Containerization and deployment
-- **Gunicorn**: Production WSGI server
-- **Render.com**: Cloud hosting platform
-- **ngrok**: Secure tunneling for AR integration
-- **Slack Bolt**: Real-time messaging integration
+
 
 ## 🏃‍♂️ Quick Start
 
@@ -129,69 +124,13 @@ python app_modular.py
 - **Web Dashboard**: http://localhost:5000
 - **Container Optimization**: http://localhost:5000/optimize
 - **AR Visualization**: http://localhost:8000 (auto-started)
-- **API Documentation**: http://localhost:5000/api/docs
-
-## 💼 Usage Examples
-
-### Basic Container Optimization
-```python
-from optigenix_module import optimize_packing_with_genetic_algorithm, Item
-
-# Define your cargo
-items = [
-    Item("Electronics", 1.2, 0.8, 0.3, 50, 5, "HIGH", "YES"),
-    Item("Furniture", 2.0, 1.5, 0.8, 200, 2, "MEDIUM", "NO"),
-    Item("Textiles", 1.0, 1.0, 0.5, 25, 10, "LOW", "YES")
-]
-
-# Choose container (40ft standard)
-container_dims = (12.00, 2.35, 2.39)
-
-# Optimize packing
-result = optimize_packing_with_genetic_algorithm(
-    items=items,
-    container_dims=container_dims,
-    population_size=20,
-    generations=15
-)
-
-# Generate visualization
-result.create_interactive_visualization().show()
-```
-
-### Advanced Temperature-Sensitive Cargo
-```python
-# Define temperature-sensitive items
-temp_item = Item(
-    name="Pharmaceuticals",
-    length=0.6, width=0.4, height=0.3,
-    weight=15, quantity=3,
-    fragility="HIGH", stackable="NO",
-    temperature_sensitivity="2-8°C"
-)
-temp_item.needs_insulation = True
-
-# Optimize with temperature constraints
-result = optimize_packing_with_genetic_algorithm(
-    items=[temp_item, ...],
-    container_dims=container_dims,
-    route_temperature=25.0  # Ambient temperature
-)
-```
-
-### Slack Integration
-```bash
-# Check system status
-/optigenix-status
-
-# Start optimization job
-/optigenix-optimize urgent
-
-# Get help
-@OptiGenix help
-```
 
 ## 🎮 AR/VR Integration
+
+### 📱 AR Application & Resources
+- **📦 AR Application APK**: [Download AR App](https://drive.google.com/file/d/1YLzJt9qcjwP9PksppQThPeI5o75yGZT0/view?usp=sharing)
+- **🎯 AR Tracker Image**: [Download AR Tracker](https://drive.google.com/file/d/10SR7P7Eatns1g4c0h7AEtD6ZVPAYbIhq/view?usp=sharing)
+- **🎥 Demo Video**: [Watch Demo on YouTube](https://youtu.be/l3YzHS40i3Y)
 
 ### Unity Setup
 1. **Install Unity 2021.3 LTS+** with AR Foundation
@@ -264,6 +203,73 @@ class TemperatureConstraintHandler:
         # Ensure surrounding insulation
         return is_position_safe
 ```
+
+## 🌡️ Temperature Constraints System
+
+Our system provides sophisticated temperature constraint handling for sensitive cargo:
+
+### Supported Temperature Ranges
+- **Pharmaceuticals**: 2°C to 8°C (refrigerated)
+- **Electronics**: 10°C to 35°C (standard)
+- **Food Products**: -18°C to 4°C (frozen/chilled)
+- **Chemicals**: Custom ranges as specified
+- **Room Temperature**: 15°C to 25°C (standard)
+
+### Temperature Constraint Features
+- **🏠 Wall Buffer Protection**: Automatic 30cm minimum distance from container walls
+- **🎯 Central Placement Priority**: Temperature-sensitive items placed in container center
+- **🛡️ Insulation Logic**: Items requiring temperature protection are surrounded by non-sensitive cargo
+- **🔄 Route Temperature Integration**: Dynamic adjustment based on transport route climate
+- **📊 Thermal Mapping**: Visual representation of temperature zones within container
+- **⚠️ Constraint Validation**: Real-time checking of temperature requirements during packing
+
+### How It Works
+1. **Item Analysis**: System identifies temperature-sensitive items from input data
+2. **Route Temperature**: Considers ambient temperature during transport
+3. **Safe Zone Calculation**: Creates temperature-safe zones within container
+4. **Priority Placement**: Temperature-sensitive items get placement priority
+5. **Insulation Strategy**: Non-sensitive items act as thermal barriers
+6. **Validation**: Continuous checking of temperature constraints during optimization
+
+## 📋 Input Data Template
+
+### CSV File Format
+Use the following template for your cargo data input:
+
+```csv
+Name,Length,Width,Height,Weight,Quantity,Fragility,LoadBear,BoxingType,Bundle,Temperature Sensitivity
+ContainerBase_A,2.95,2.35,0.05,100,2,LOW,9999,CRATE,YES,n/a
+Electronics_Box,1.2,0.8,0.3,50,5,HIGH,500,BOX,YES,10°C to 35°C
+Pharmaceuticals,0.6,0.4,0.3,15,3,HIGH,0,BOX,NO,2°C to 8°C
+Furniture_Item,2.0,1.5,0.8,200,2,MEDIUM,1000,CRATE,NO,n/a
+```
+
+### Field Descriptions
+| Field | Type | Description | Example Values |
+|-------|------|-------------|----------------|
+| **Name** | String | Unique item identifier | "Electronics_Box", "Pharma_001" |
+| **Length** | Float | Length in meters | 1.2, 2.95 |
+| **Width** | Float | Width in meters | 0.8, 2.35 |
+| **Height** | Float | Height in meters | 0.3, 0.05 |
+| **Weight** | Float | Weight in kilograms | 50, 100, 200 |
+| **Quantity** | Integer | Number of identical items | 1, 2, 5 |
+| **Fragility** | String | Fragility level | LOW, MEDIUM, HIGH |
+| **LoadBear** | Integer | Load bearing capacity (kg) | 0, 500, 9999 |
+| **BoxingType** | String | Packaging type | BOX, CRATE, PALLET |
+| **Bundle** | String | Can be bundled together | YES, NO |
+| **Temperature Sensitivity** | String | Temperature range or n/a | "2°C to 8°C", "n/a" |
+
+### Sample Files
+- 📁 `input/perfect_utilization.csv` - Complete template example
+- 📁 `input/perfect_100.csv` - High utilization example  
+- 📁 `input/max_utilization.csv` - Maximum efficiency example
+
+### Temperature Sensitivity Examples
+- `n/a` - No temperature requirements
+- `2°C to 8°C` - Refrigerated pharmaceuticals
+- `10°C to 35°C` - Standard electronics
+- `-18°C to 4°C` - Frozen/chilled food products
+- `15°C to 25°C` - Room temperature goods
 
 ## 🔧 API Reference
 
@@ -352,34 +358,6 @@ CONTAINER_TYPES['Custom-Container'] = (15.0, 3.0, 3.0, 35000)
 - **AR Streaming**: 30fps real-time updates
 - **Memory Usage**: 512MB-2GB depending on complexity
 
-## 🐳 Docker Deployment
-
-### Local Development
-```bash
-docker build -t gravitycargo .
-docker run -p 5000:5000 -e FLASK_ENV=development gravitycargo
-```
-
-### Production Deployment
-```bash
-# Using docker-compose
-docker-compose up -d
-
-# Environment-specific builds
-docker build --target production -t gravitycargo:prod .
-```
-
-### Render.com Deployment
-```yaml
-# render.yaml configuration included
-services:
-  - type: web
-    name: gravitycargo
-    runtime: python-3.9.19
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:app
-```
-
 ## 🧪 Testing
 
 ### Unit Tests
@@ -391,27 +369,6 @@ python -m pytest tests/
 python -m pytest tests/test_genetic_algorithm.py
 python -m pytest tests/test_container_packing.py
 python -m pytest tests/test_ar_integration.py
-```
-
-### Integration Tests
-```bash
-# Test AR integration
-python test_ar_integration.py
-
-# Test Slack integration
-python test_slack_integration.py
-
-# Test mobile notifications
-python test_mobile_notifications.py
-```
-
-### Performance Testing
-```bash
-# Load testing
-python tests/performance/load_test.py
-
-# Memory profiling
-python tests/performance/memory_profile.py
 ```
 
 ## 🤝 Contributing
@@ -443,52 +400,9 @@ pre-commit install
 3. **Documentation**: Update README and docstrings
 4. **Review**: Submit PR with detailed description
 
-## 📋 Roadmap
-
-### Version 2.0 (Q2 2025)
-- [ ] **Machine Learning Integration**: Predictive packing suggestions
-- [ ] **Multi-Container Optimization**: Fleet-wide optimization
-- [ ] **Real-time Tracking**: IoT sensor integration
-- [ ] **Advanced Materials**: Support for liquid and gas containers
-
-### Version 2.1 (Q3 2025)
-- [ ] **Blockchain Integration**: Supply chain transparency
-- [ ] **AI Safety Validation**: Automated safety compliance checking
-- [ ] **Advanced AR Features**: Gesture recognition and voice commands
-- [ ] **Global Optimization**: Cross-route container planning
-
-### Version 3.0 (Q4 2025)
-- [ ] **Autonomous Vehicle Integration**: Self-driving truck support
-- [ ] **Quantum Computing**: Quantum-enhanced optimization algorithms
-- [ ] **Digital Twin Technology**: Real-world container simulation
-- [ ] **Sustainability Metrics**: Carbon footprint optimization
-
-## 🏆 Awards & Recognition
-
-- **🥇 Best AI Innovation**: Logistics Tech Awards 2024
-- **🌟 Most Promising Startup**: TechCrunch Disrupt 2024
-- **💡 Innovation Excellence**: Supply Chain Innovation Awards 2024
-
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙋‍♂️ Support & Contact
-
-### Documentation
-- **Wiki**: [GitHub Wiki](https://github.com/Dinesh210805/GravitycARgo_TGB/wiki)
-- **API Docs**: [API Reference](https://gravitycargo.docs.io)
-- **Video Tutorials**: [YouTube Channel](https://youtube.com/gravitycargo)
-
-### Community
-- **Discord**: [Join our community](https://discord.gg/gravitycargo)
-- **Slack**: [Workspace](https://gravitycargo.slack.com)
-- **Forum**: [Discussion Board](https://github.com/Dinesh210805/GravitycARgo_TGB/discussions)
-
-### Professional Support
-- **Email**: support@gravitycargo.com
-- **Enterprise**: enterprise@gravitycargo.com
-- **Consulting**: consulting@gravitycargo.com
 
 ---
 
