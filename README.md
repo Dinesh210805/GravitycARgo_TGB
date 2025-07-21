@@ -61,13 +61,6 @@ graph TD
 - **Dynamic Camera Controls**: Multi-angle viewing with zoom and rotation
 - **Export Capabilities**: Save visualizations as images or interactive HTML
 
-### 🔗 Professional Integrations
-- **Slack Workflow Automation**: Real-time status updates and command processing
-- **Mobile-Optimized Interface**: Responsive design for field operations
-- **RESTful API**: Complete programmatic access to all features
-- **Docker Support**: Containerized deployment for scalability
-- **Cloud-Ready**: Render.com deployment configuration included
-
 ## 🛠️ Technology Stack
 
 ### Backend
@@ -152,8 +145,6 @@ https://destined-mammoth-flowing.ngrok-free.app/latest_container_plan.json
 ### Features in AR
 - **Real-time 3D Visualization**: See container contents in augmented reality
 - **Interactive Item Manipulation**: Touch and move virtual cargo
-- **Measurement Tools**: Real-world scale measurements
-- **Multi-user Support**: Collaborative viewing sessions
 
 ## 📊 Container Types & Transport Modes
 
@@ -260,9 +251,12 @@ Furniture_Item,2.0,1.5,0.8,200,2,MEDIUM,1000,CRATE,NO,n/a
 | **Temperature Sensitivity** | String | Temperature range or n/a | "2°C to 8°C", "n/a" |
 
 ### Sample Files
-- 📁 `input/perfect_utilization.csv` - Complete template example
+- 📁 `input/max_utilization.csv` - Complete template example with optimal space usage
 - 📁 `input/perfect_100.csv` - High utilization example  
-- 📁 `input/max_utilization.csv` - Maximum efficiency example
+- 📁 `input/perfect_utilization.csv` - Maximum efficiency example
+- 📁 `input/inventory_data_utf8.csv` - Real-world inventory template
+- 📁 `input/83 percent.csv` - 83% utilization sample
+- 📁 `input/80 input.csv` - 80% utilization sample
 
 ### Temperature Sensitivity Examples
 - `n/a` - No temperature requirements
@@ -354,51 +348,12 @@ CONTAINER_TYPES['Custom-Container'] = (15.0, 3.0, 3.0, 35000)
 
 ### System Performance
 - **Response Time**: <2 seconds for UI interactions
-- **Concurrent Users**: 50+ supported
 - **AR Streaming**: 30fps real-time updates
 - **Memory Usage**: 512MB-2GB depending on complexity
 
-## 🧪 Testing
+##  Contributing
 
-### Unit Tests
-```bash
-# Run all tests
-python -m pytest tests/
-
-# Test specific modules
-python -m pytest tests/test_genetic_algorithm.py
-python -m pytest tests/test_container_packing.py
-python -m pytest tests/test_ar_integration.py
-```
-
-## 🤝 Contributing
-
-### Development Setup
-```bash
-# Fork the repository
-git fork https://github.com/Dinesh210805/GravitycARgo_TGB.git
-
-# Create feature branch
-git checkout -b feature/amazing-new-feature
-
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Run pre-commit hooks
-pre-commit install
-```
-
-### Code Standards
-- **Python**: Follow PEP 8 with Black formatting
-- **Documentation**: Comprehensive docstrings for all functions
-- **Testing**: 90%+ code coverage requirement
-- **Commits**: Conventional commit messages
-
-### Pull Request Process
-1. **Feature Development**: Implement in feature branch
-2. **Testing**: Ensure all tests pass
-3. **Documentation**: Update README and docstrings
-4. **Review**: Submit PR with detailed description
+##  License
 
 ##  License
 
