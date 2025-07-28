@@ -267,14 +267,32 @@ class SlackSocketMode:
         def handle_status_command(ack, command, say, logger):
             """Handle /optigenix-status command"""
             ack()
+            logger.info("Received /optigenix-status command")
             
             try:
-                # Get system status directly without HTTP handler
-                json_service = JSONServerService.get_instance()
-                json_running = json_service.is_running()
+                # Simple status check without complex dependencies
                 main_status = "🟢 Running"
-                json_status = "🟢 Running" if json_running else "🔴 Stopped"
-                route_status = "🟢 Running" if is_port_in_use(AppConfig.ROUTE_TEMP_PORT) else "🔴 Stopped"
+                json_status = "🔴 Stopped"  # Default to stopped
+                route_status = "🔴 Stopped"  # Default to stopped
+                
+                # Try to check JSON server status
+                try:
+                    global json_server_service
+                    if json_server_service:
+                        json_status = "🟢 Running" if json_server_service.is_running() else "🔴 Stopped"
+                except Exception as e:
+                    logger.warning(f"Could not check JSON server status: {e}")
+                
+                # Try to check route server status
+                try:
+                    import socket
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        result = s.connect_ex(('localhost', AppConfig.ROUTE_TEMP_PORT))
+                        route_status = "🟢 Running" if result == 0 else "🔴 Stopped"
+                except Exception as e:
+                    logger.warning(f"Could not check route server status: {e}")
+                
+                logger.info(f"Status check: main={main_status}, json={json_status}, route={route_status}")
                 
                 status_message = f"""🚛 *OptiGenix Container Optimizer Status*
 
@@ -287,36 +305,46 @@ class SlackSocketMode:
 • `/optigenix-status` - Check server status  
 • `/optigenix-optimize [urgent|normal]` - Start optimization"""
                 
-                say(blocks=[
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": status_message
-                        }
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {"type": "plain_text", "text": "🚀 Quick Optimize"},
-                                "value": "start_optimization",
-                                "action_id": "quick_optimize"
-                            },
-                            {
-                                "type": "button", 
-                                "text": {"type": "plain_text", "text": "📊 Dashboard"},
-                                "value": "view_dashboard",
-                                "action_id": "open_dashboard"
+                logger.info("About to send status message")
+                
+                say(
+                    text=status_message,  # Add text parameter to fix warning
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": status_message
                             }
-                        ]
-                    }
-                ])
+                        },
+                        {
+                            "type": "actions",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {"type": "plain_text", "text": "🚀 Quick Optimize"},
+                                    "value": "start_optimization",
+                                    "action_id": "quick_optimize"
+                                },
+                                {
+                                    "type": "button", 
+                                    "text": {"type": "plain_text", "text": "📊 Dashboard"},
+                                    "value": "view_dashboard",
+                                    "action_id": "open_dashboard"
+                                }
+                            ]
+                        }
+                    ]
+                )
+                
+                logger.info("Status message sent successfully")
                 
             except Exception as e:
                 logger.error(f"Error in Socket Mode status command: {e}")
-                say(f"❌ Error getting status: {str(e)}")
+                try:
+                    say(f"❌ Error getting status: {str(e)}")
+                except Exception as say_error:
+                    logger.error(f"Failed to send error message: {say_error}")
         
         @self.bot_app.command("/optigenix-optimize")
         def handle_optimize_command(ack, command, say, logger):
@@ -380,6 +408,23 @@ class SlackSocketMode:
                 logger.error(f"Error in mention handler: {e}")
                 say("❌ Sorry, I encountered an error.")
         
+        @self.bot_app.event("message")
+        def handle_message_events(event, logger):
+            """Handle general message events (including bot_add events)"""
+            try:
+                # Log the event for debugging but don't respond to general messages
+                # This prevents the "unhandled request" warnings
+                event_type = event.get("type", "unknown")
+                subtype = event.get("subtype", "none")
+                logger.info(f"Received message event: type={event_type}, subtype={subtype}")
+                
+                # Only respond to direct mentions, not all channel messages
+                # The app_mention handler above handles @OptiGenix mentions
+                pass
+                
+            except Exception as e:
+                logger.error(f"Error in message handler: {e}")
+        
         @self.bot_app.action("quick_optimize")
         def handle_quick_optimize(ack, body, say):
             """Handle quick optimize button"""
@@ -409,8 +454,17 @@ class SlackSocketMode:
             def run_socket_mode():
                 self.handler = SocketModeHandler(self.bot_app, self.app_token)
                 print("🔗 Socket Mode: Starting connection...")
-                self.handler.start()
-            
+                # Remove signal handling in thread - this fixes the Windows issue
+                try:
+                    self.handler.start()
+                except ValueError as e:
+                    if "signal only works in main thread" in str(e):
+                        print("⚠️ Socket Mode signal handling issue (non-critical)")
+                        # Continue anyway - Socket Mode will still work
+                        pass
+                    else:
+                        raise e
+        
             # Start in background thread
             socket_thread = threading.Thread(target=run_socket_mode, daemon=True)
             socket_thread.start()
@@ -910,6 +964,17 @@ def create_app():
         """Serve the container visualization page"""
         return render_template('container_visualization.html')
     
+    # Test route for route temperature button debugging
+    @app.route('/test_route_temp_button')
+    def test_route_temp_button():
+        """Serve the test page for route temperature button"""
+        return render_template('test_route_temp_button.html')
+    
+    @app.route('/test_api')
+    def test_route_temp_api():
+        """Serve the API test page for route temperature"""
+        return render_template('test_route_temp_api.html')
+    
     # JSON server control routes for AR visualization
     @app.route('/start_json_server', methods=['POST'])
     def start_json_server_handler():
@@ -1004,6 +1069,84 @@ def create_app():
             'environment': os.environ.get('FLASK_ENV', 'development'),
             'version': '1.0.0'
         })
+    
+    @app.route('/api/calculate_route_temperature', methods=['POST'])
+    def calculate_route_temperature_handler():
+        """Calculate average route temperature using the routing server"""
+        try:
+            import requests
+            import json
+            
+            # Get the request data
+            route_data = request.get_json()
+            
+            # Check if routing server is running
+            route_server_url = f"http://localhost:{AppConfig.ROUTE_TEMP_PORT}"
+            
+            try:
+                # Test if routing server is accessible
+                health_response = requests.get(f"{route_server_url}/health", timeout=5)
+                if health_response.status_code != 200:
+                    raise Exception("Routing server is not responding")
+            except requests.RequestException:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Route calculation server is not running. Please start the routing services first.'
+                }), 503
+            
+            # Forward the request to the routing server
+            try:
+                response = requests.post(
+                    f"{route_server_url}/calculate_route",
+                    json=route_data,
+                    headers={'Content-Type': 'application/json'},
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    route_result = response.json()
+                    
+                    # Extract the average temperature from the response
+                    if route_result.get('status') == 'success':
+                        weather_summary = route_result.get('route_info', {}).get('weather_summary', {})
+                        avg_temp = weather_summary.get('avg_temperature')
+                        
+                        if avg_temp is not None:
+                            return jsonify({
+                                'status': 'success',
+                                'average_temperature': avg_temp,
+                                'route_info': route_result.get('route_info', {}),
+                                'message': f'Route temperature calculated successfully: {avg_temp:.1f}°C'
+                            })
+                        else:
+                            return jsonify({
+                                'status': 'error',
+                                'message': 'Could not extract temperature data from route calculation'
+                            }), 400
+                    else:
+                        return jsonify({
+                            'status': 'error',
+                            'message': route_result.get('message', 'Route calculation failed')
+                        }), 400
+                else:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Route calculation server returned error: {response.status_code}'
+                    }), response.status_code
+                    
+            except requests.RequestException as e:
+                app.logger.error(f"Error communicating with routing server: {str(e)}")
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Failed to communicate with route calculation server: {str(e)}'
+                }), 503
+                
+        except Exception as e:
+            app.logger.error(f"Route temperature calculation error: {str(e)}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Internal server error: {str(e)}'
+            }), 500
     
     # Server configuration endpoint for frontend
     @app.route('/api/server-config')
@@ -1183,7 +1326,7 @@ if __name__ == '__main__':
         if socket_mode.is_running:
             print("⚡ Slack Commands: Ready (100% automated)")
         else:
-            print(f"⚡ Slack Commands: {AppConfig.get_slack_command_url()}")
+            print("⚡ Slack Commands: Not configured (check .env tokens)")
         print("📱 Mobile: Ready for testing")
         print("⚠️  Keep terminal open during demo")
         

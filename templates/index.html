@@ -446,6 +446,26 @@
                           <span>Hot: Above 30°C</span>
                         </div>
                       </div>
+
+                      <!-- Route Temperature Calculation -->
+                      <div class="route-temp-calculation mt-3">
+                        <button type="button" id="calculateRouteTemp" class="btn btn-outline-primary btn-sm w-100" onclick="testRouteTemperature()">
+                          <i class="fas fa-route"></i>
+                          Calculate Average Route Temperature
+                        </button>
+                        <div id="routeTempStatus" class="mt-2" style="display: none;">
+                          <small class="text-muted">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Calculating route temperature...
+                          </small>
+                        </div>
+                        <div id="routeTempResult" class="mt-2" style="display: none;">
+                          <small class="text-success">
+                            <i class="fas fa-check-circle"></i>
+                            Temperature automatically set based on route analysis
+                          </small>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1083,6 +1103,234 @@
             default:
               return true;
           }
+        }
+
+        // Global function for route temperature calculation (backup method)
+        window.testRouteTemperature = async function() {
+          console.log('🌡️ testRouteTemperature called!');
+          
+          const btn = document.getElementById('calculateRouteTemp');
+          const statusDiv = document.getElementById('routeTempStatus');
+          const resultDiv = document.getElementById('routeTempResult');
+          
+          if (!btn) {
+            console.error('Button not found!');
+            alert('Button not found!');
+            return;
+          }
+          
+          // Show loading
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
+          if (statusDiv) statusDiv.style.display = 'block';
+          if (resultDiv) resultDiv.style.display = 'none';
+          
+          try {
+            console.log('Making API request...');
+            
+            const routeData = {
+              source: "Singapore",
+              source_coords: [1.3521, 103.8198],
+              destinations: [{ name: "Hong Kong", coords: [22.3193, 114.1694] }],
+              checkpoints: 5,
+              start_time: new Date().toISOString()
+            };
+            
+            const response = await fetch('/api/calculate_route_temperature', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(routeData)
+            });
+            
+            console.log('Response status:', response.status);
+            const result = await response.json();
+            console.log('Result:', result);
+            
+            if (result.status === 'success') {
+              const temp = Math.round(result.average_temperature);
+              
+              // Update slider
+              const slider = document.getElementById('temp_slider');
+              const tooltip = document.getElementById('tempTooltip');
+              
+              if (slider) {
+                slider.value = temp;
+                console.log('Updated slider to:', temp);
+              }
+              if (tooltip) {
+                tooltip.textContent = temp + '°C';
+              }
+              
+              // Show success
+              if (resultDiv) {
+                resultDiv.querySelector('small').innerHTML = 
+                  `<i class="fas fa-check-circle"></i> Temperature set to ${temp}°C`;
+                resultDiv.style.display = 'block';
+              }
+              
+              alert(`Success! Temperature set to ${temp}°C`);
+            } else {
+              throw new Error(result.message || 'Failed');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
+            
+            if (resultDiv) {
+              resultDiv.querySelector('small').innerHTML = 
+                `<i class="fas fa-exclamation-circle text-warning"></i> Error: ${error.message}`;
+              resultDiv.style.display = 'block';
+            }
+          } finally {
+            // Restore button
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-route"></i> Calculate Average Route Temperature';
+            if (statusDiv) statusDiv.style.display = 'none';
+          }
+        };
+
+        // Route Temperature Calculation - Enhanced with debugging
+        function initializeRouteTemperatureButton() {
+          console.log('🌡️ Initializing route temperature button...');
+          
+          const calculateRouteTempBtn = document.getElementById('calculateRouteTemp');
+          const routeTempStatus = document.getElementById('routeTempStatus');
+          const routeTempResult = document.getElementById('routeTempResult');
+          const tempSlider = document.getElementById('temp_slider');
+          const tempTooltip = document.getElementById('tempTooltip');
+          const routeTemperatureInput = document.getElementById('route_temperature');
+
+          console.log('Button found:', !!calculateRouteTempBtn);
+          console.log('Status div found:', !!routeTempStatus);
+          console.log('Result div found:', !!routeTempResult);
+          console.log('Temp slider found:', !!tempSlider);
+
+          if (calculateRouteTempBtn) {
+            console.log('✅ Adding click listener to route temperature button');
+            
+            // Remove any existing listeners
+            const newBtn = calculateRouteTempBtn.cloneNode(true);
+            calculateRouteTempBtn.parentNode.replaceChild(newBtn, calculateRouteTempBtn);
+            
+            newBtn.addEventListener('click', async function() {
+              console.log('🔥 Route temperature button clicked!');
+              
+              // Show loading state
+              const statusDiv = document.getElementById('routeTempStatus');
+              const resultDiv = document.getElementById('routeTempResult');
+              
+              if (statusDiv) statusDiv.style.display = 'block';
+              if (resultDiv) resultDiv.style.display = 'none';
+              newBtn.disabled = true;
+              newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
+
+              try {
+                console.log('📡 Preparing API request...');
+                
+                // For demo purposes, use sample locations
+                const routeData = {
+                  source: "Singapore",
+                  source_coords: [1.3521, 103.8198],
+                  destinations: [
+                    {
+                      name: "Hong Kong",
+                      coords: [22.3193, 114.1694]
+                    }
+                  ],
+                  checkpoints: 5,
+                  start_time: new Date().toISOString()
+                };
+
+                console.log('📤 Sending API request to /api/calculate_route_temperature');
+                console.log('Request data:', routeData);
+
+                // Call the route calculation endpoint
+                const response = await fetch('/api/calculate_route_temperature', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(routeData)
+                });
+
+                console.log('📥 Response status:', response.status);
+                const result = await response.json();
+                console.log('📋 Response data:', result);
+
+                if (result.status === 'success') {
+                  const avgTemp = Math.round(result.average_temperature);
+                  console.log(`🌡️ Success! Average temperature: ${avgTemp}°C`);
+                  
+                  // Update temperature slider
+                  const slider = document.getElementById('temp_slider');
+                  const tooltip = document.getElementById('tempTooltip');
+                  const hiddenInput = document.getElementById('route_temperature');
+                  
+                  if (slider) {
+                    slider.value = avgTemp;
+                    console.log('Updated slider to:', avgTemp);
+                  }
+                  
+                  if (tooltip) {
+                    tooltip.textContent = avgTemp + '°C';
+                    console.log('Updated tooltip to:', avgTemp + '°C');
+                  }
+                  
+                  if (hiddenInput) {
+                    hiddenInput.value = avgTemp;
+                    console.log('Updated hidden input to:', avgTemp);
+                  }
+                  
+                  // Update tooltip position
+                  if (slider && tooltip) {
+                    const sliderPercent = (avgTemp - slider.min) / (slider.max - slider.min);
+                    tooltip.style.left = sliderPercent * 100 + '%';
+                  }
+                  
+                  // Show success message
+                  if (resultDiv) {
+                    resultDiv.querySelector('small').innerHTML = 
+                      `<i class="fas fa-check-circle"></i> Temperature set to ${avgTemp}°C based on Singapore to Hong Kong route`;
+                    resultDiv.style.display = 'block';
+                  }
+                  
+                  console.log('✅ UI updated successfully');
+                } else {
+                  throw new Error(result.message || 'Failed to calculate route temperature');
+                }
+              } catch (error) {
+                console.error('❌ Route temperature calculation error:', error);
+                
+                // Show error message
+                if (resultDiv) {
+                  resultDiv.querySelector('small').innerHTML = 
+                    `<i class="fas fa-exclamation-circle text-warning"></i> Error: ${error.message}`;
+                  resultDiv.style.display = 'block';
+                }
+              } finally {
+                // Hide loading state
+                if (statusDiv) statusDiv.style.display = 'none';
+                newBtn.disabled = false;
+                newBtn.innerHTML = '<i class="fas fa-route"></i> Calculate Average Route Temperature';
+                console.log('🔄 Button state restored');
+              }
+            });
+            
+            console.log('✅ Route temperature button initialized successfully');
+          } else {
+            console.error('❌ Route temperature button not found!');
+          }
+        }
+
+        // Initialize route temperature button when DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM loaded, initializing route temperature button...');
+            setTimeout(initializeRouteTemperatureButton, 100); // Small delay to ensure all elements are ready
+          });
+        } else {
+          console.log('📄 DOM already loaded, initializing route temperature button immediately...');
+          initializeRouteTemperatureButton();
         }
       });
     </script>

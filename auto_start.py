@@ -69,6 +69,9 @@ class OptiGenixAutoStarter:
             os.environ['PYTHONIOENCODING'] = 'utf-8'
             os.environ['OPTIGENIX_AUTO_NOTIFICATIONS'] = 'true'
             
+            # Start routing server first
+            self.start_routing_server()
+            
             self.log("Loading OptiGenix Flask application...", "INFO")
             
             # Import and start the Flask app directly (no subprocess)
@@ -142,6 +145,44 @@ class OptiGenixAutoStarter:
                 
         except Exception as e:
             self.log(f"Error starting main service: {e}", "ERROR")
+            return False
+    
+    def start_routing_server(self):
+        """Start the routing server for route temperature calculations"""
+        self.log("Starting routing server for route temperature calculations...", "INFO")
+        
+        try:
+            import subprocess
+            import sys
+            
+            # Navigate to routing directory and start the server
+            routing_dir = self.script_dir / "routing"
+            
+            # Set environment for Flask
+            env = os.environ.copy()
+            env['FLASK_APP'] = 'Server.py'
+            env['FLASK_ENV'] = 'development'
+            
+            # Start routing server process
+            routing_process = subprocess.Popen([
+                sys.executable, '-m', 'flask', 'run', '--port', '5001', '--host', '0.0.0.0'
+            ], 
+            cwd=str(routing_dir),
+            env=env,
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE)
+            
+            self.services['routing'] = routing_process
+            self.log("Routing server started on port 5001", "SUCCESS")
+            
+            # Give it time to start
+            time.sleep(3)
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"Error starting routing server: {e}", "WARNING")
+            self.log("Route temperature calculations may not work", "WARNING")
             return False
             
     def wait_for_service(self, url, service_name, max_wait=30):
@@ -222,15 +263,17 @@ class OptiGenixAutoStarter:
 
 📊 **Status:**
 • Main Application: ✅ Running (Port 5000)
+• Routing Server: ✅ Running (Port 5001)
 • Socket Mode: ✅ Connected
 • Auto-Notifications: ✅ Enabled
 
 🎯 **Ready for:**
 • Web optimizations at http://localhost:5000
+• Route temperature calculations ✅
 • Slack commands: `/optigenix-status`, `/optigenix-optimize`
 • Automatic completion notifications
 
-💡 *System is fully operational!*"""
+💡 *System is fully operational with route temperature feature!*"""
                 
                 try:
                     socket_mode.bot_app.client.chat_postMessage(

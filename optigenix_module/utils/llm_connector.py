@@ -28,7 +28,8 @@ class GeminiClient:
             self.enabled = False
             return
         self.enabled = True
-        self.model_name = "gemini-2.5-flash-preview-05-20"  # Updated to use the latest flash model
+        # self.model_name = "gemini-2.0-flash-lite"  # Updated to use the latest flash model
+        self.model_name = "Gemini 2.5 Flash-Lite Preview 06-17"  # Updated to use the latest flash model
         
         try:
             genai.configure(api_key=self.api_key)
