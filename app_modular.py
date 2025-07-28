@@ -1189,6 +1189,49 @@ def create_app():
             app.logger.error(f"Error serving container plan: {str(e)}")
             return jsonify({'error': 'Internal server error'}), 500
     
+    @app.route('/api/container_plans', methods=['GET'])
+    def get_container_plans():
+        """Get list of all available container plans with their data"""
+        try:
+            # Get all JSON files from the container_plans directory
+            plans_dir = os.path.join(os.path.dirname(__file__), 'container_plans')
+            json_files = glob.glob(os.path.join(plans_dir, '*.json'))
+            
+            container_plans = []
+            
+            for i, file_path in enumerate(sorted(json_files, reverse=True)):  # Most recent first
+                filename = os.path.basename(file_path)
+                if filename == '.gitkeep':
+                    continue
+                    
+                try:
+                    with open(file_path, 'r') as f:
+                        plan_data = json.load(f)
+                    
+                    container_plans.append({
+                        'index': i,
+                        'filename': filename,
+                        'data': plan_data
+                    })
+                except (json.JSONDecodeError, FileNotFoundError) as e:
+                    app.logger.warning(f"Skipping invalid file {filename}: {str(e)}")
+                    continue
+            
+            return jsonify({
+                'success': True,
+                'plans': container_plans,
+                'count': len(container_plans)
+            })
+            
+        except Exception as e:
+            app.logger.error(f"Error loading container plans: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to load container plans',
+                'plans': [],
+                'count': 0
+            }), 500
+    
     # Register blueprint
     app.register_blueprint(bp)
     
