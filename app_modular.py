@@ -964,6 +964,18 @@ def create_app():
         """Serve the container visualization page"""
         return render_template('container_visualization.html')
     
+    # Dashboard Route
+    @app.route('/dashboard')
+    def dashboard():
+        """Serve the dashboard page for viewing past optimization results"""
+        return render_template('dashboard.html')
+    
+    # Test route to verify routing works
+    @app.route('/test')
+    def test_route():
+        """Simple test route"""
+        return "<h1>Test Route Works!</h1>"
+    
     # Test route for route temperature button debugging
     @app.route('/test_route_temp_button')
     def test_route_temp_button():
@@ -1231,6 +1243,29 @@ def create_app():
                 'plans': [],
                 'count': 0
             }), 500
+    
+    @app.route('/api/container_plans/<filename>', methods=['GET'])
+    def get_container_plan_by_filename(filename):
+        """Get a specific container plan by filename"""
+        try:
+            # Validate filename for security
+            if not filename.endswith('.json') or '..' in filename or '/' in filename or '\\' in filename:
+                return jsonify({'error': 'Invalid filename'}), 400
+            
+            plans_dir = os.path.join(os.path.dirname(__file__), 'container_plans')
+            file_path = os.path.join(plans_dir, filename)
+            
+            if not os.path.exists(file_path):
+                return jsonify({'error': 'Container plan not found'}), 404
+            
+            with open(file_path, 'r') as f:
+                plan_data = json.load(f)
+            
+            return jsonify(plan_data)
+            
+        except Exception as e:
+            app.logger.error(f"Error loading container plan {filename}: {str(e)}")
+            return jsonify({'error': 'Failed to load container plan'}), 500
     
     # Register blueprint
     app.register_blueprint(bp)
