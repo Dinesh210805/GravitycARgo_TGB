@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiGenix Dashboard - Divine Container Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        :root {
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --glass-bg: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(148, 163, 184, 0.1);
+            --glass-hover: rgba(148, 163, 184, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        [data-theme="light"] {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(71, 85, 105, 0.1);
+            --glass-hover: rgba(71, 85, 105, 0.05);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+        }
+        
+        .glass-dark {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-dark:hover {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: rgba(148, 163, 184, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.3),
+                0 10px 10px -5px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .morphing-bg {
+            background: linear-gradient(135deg, 
+                #1e293b 0%, 
+                #1e40af 20%, 
+                #7c3aed 40%, 
+                #1e293b 60%, 
+                #0f172a 80%, 
+                #1e293b 100%);
+            background-size: 400% 400%;
+            animation: morphBackground 20s ease-in-out infinite;
+        }
+        
+        @keyframes morphBackground {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+        
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+        
+        .particle.large {
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.9) 0%, transparent 70%);
+            animation-duration: 12s;
+        }
+        
+        .particle.small {
+            width: 3px;
+            height: 3px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.7) 0%, transparent 70%);
+            animation-duration: 6s;
+        }
+        
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0px) rotate(0deg) scale(1); 
+                opacity: 0.7; 
+            }
+            25% { 
+                transform: translateY(-30px) rotate(90deg) scale(1.1); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateY(-15px) rotate(180deg) scale(0.9); 
+                opacity: 0.8; 
+            }
+            75% { 
+                transform: translateY(-25px) rotate(270deg) scale(1.05); 
+                opacity: 0.9; 
+            }
+        }
+        
+        .hover-scale {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.03) translateY(-4px);
+            filter: brightness(1.1);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px) scale(0.95); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        
+        .slide-in-right {
+            animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideInRight {
+            from { 
+                opacity: 0; 
+                transform: translateX(50px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+        
+        .progress-bar {
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        /* Enhanced Loading Spinner */
+        .loading-spinner {
+            width: 64px;
+            height: 64px;
+            position: relative;
+        }
+        
+        .loading-spinner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-radius: 50%;
+        }
+        
+        .loading-spinner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 4px solid transparent;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Stop all animations when loading is complete */
+        .animations-paused * {
+            animation-play-state: paused !important;
+        }
+        
+        .status-excellent { color: #10b981; }
+        .status-good { color: #3b82f6; }
+        .status-average { color: #f59e0b; }
+        .status-poor { color: #ef4444; }
+        
+        .bg-status-excellent { 
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05)); 
+            border-color: rgba(16, 185, 129, 0.3); 
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+        .bg-status-good { 
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); 
+            border-color: rgba(59, 130, 246, 0.3); 
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+        .bg-status-average { 
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05)); 
+            border-color: rgba(245, 158, 11, 0.3); 
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+        }
+        .bg-status-poor { 
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05)); 
+            border-color: rgba(239, 68, 68, 0.3); 
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .chart-container canvas {
+            position: absolute !important;
+            top: 0;
+            left: 0;
+            pointer-events: auto;
+            border-radius: 12px;
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+        }
+        
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Enhanced Floating Action Button */
+        .floating-action-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 10px 25px rgba(59, 130, 246, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .floating-action-btn:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 
+                0 20px 40px rgba(59, 130, 246, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+        
+        .floating-action-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 5rem;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(15, 23, 42, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .command-palette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .command-palette.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .command-palette-content {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 70vh;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .command-palette.active .command-palette-content {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .insights-panel {
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.1) 0%, 
+                rgba(139, 92, 246, 0.1) 50%, 
+                rgba(6, 182, 212, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .metric-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .metric-card:hover::before {
+            left: 100%;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.2s ease;
+            z-index: 1000;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .tooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.6);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8);
+        }
+        
+        /* Tag styles */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #3b82f6;
+            transition: all 0.2s ease;
+        }
+        
+        .tag:hover {
+            background: rgba(59, 130, 246, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .tag.active {
+            background: rgba(59, 130, 246, 0.3);
+            color: #ffffff;
+        }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .floating-action-btn {
+                width: 56px;
+                height: 56px;
+                bottom: 1rem;
+                right: 1rem;
+            }
+            
+            .command-palette-content {
+                width: 95%;
+                top: 5%;
+            }
+        }
+    </style>
+</head>
+<body class="morphing-bg min-h-screen text-white overflow-x-hidden">
+    <!-- Animated Background -->
+    <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
+    
+    <!-- Command Palette -->
+    <div id="commandPalette" class="command-palette">
+        <div class="command-palette-content">
+            <div class="p-4 border-b border-white/10">
+                <input 
+                    type="text" 
+                    id="commandInput"
+                    placeholder="Type a command or search... (Cmd+K)"
+                    class="w-full bg-transparent border-none outline-none text-white placeholder-gray-400 text-lg"
+                    autocomplete="off"
+                >
+            </div>
+            <div id="commandResults" class="p-4 max-h-96 overflow-y-auto">
+                <!-- Command results will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating Action Button -->
+    <button class="floating-action-btn text-white hover:text-gray-200" onclick="toggleCommandPalette()" title="Open Command Palette (Cmd+K)">
+        <i class="fas fa-search text-xl"></i>
+    </button>
+    
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle text-gray-400 hover:text-white" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-moon" id="themeIcon"></i>
+    </button>
+    
+    <!-- Main Dashboard -->
+    <div class="relative z-10">
+        <!-- Sticky Header -->
+        <header class="sticky top-0 z-50 glass-dark border-b border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-cube text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                                    OptiGenix Dashboard
+                                </h1>
+                                <p class="text-gray-400 text-sm">Divine Container Intelligence</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <button onclick="refreshData()" class="glass-dark px-4 py-2 rounded-lg hover:bg-white/10 transition-all">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                        <button onclick="exportData()" class="glass-dark px-4 py-2 rounded-lg hover:bg-white/10 transition-all">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                        <div class="relative">
+                            <button onclick="toggleNotifications()" class="glass-dark p-3 rounded-lg hover:bg-white/10 transition-all relative">
+                                <i class="fas fa-bell"></i>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Search Bar -->
+                <div class="mt-6">
+                    <div class="relative max-w-xl">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            class="glass-dark w-full pl-10 pr-4 py-3 rounded-xl border border-white/10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-white placeholder-gray-400 transition-all"
+                            placeholder="Search container plans..."
+                        >
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <kbd class="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">Ctrl+F</kbd>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Tags -->
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <button class="tag active" onclick="filterByTag('all')" data-tag="all">
+                            <i class="fas fa-globe mr-1"></i>All Plans
+                        </button>
+                        <button class="tag" onclick="filterByTag('excellent')" data-tag="excellent">
+                            <i class="fas fa-star mr-1"></i>Excellent (90%+)
+                        </button>
+                        <button class="tag" onclick="filterByTag('good')" data-tag="good">
+                            <i class="fas fa-thumbs-up mr-1"></i>Good (70-89%)
+                        </button>
+                        <button class="tag" onclick="filterByTag('recent')" data-tag="recent">
+                            <i class="fas fa-clock mr-1"></i>Recent
+                        </button>
+                        <button class="tag" onclick="filterByTag('favorites')" data-tag="favorites">
+                            <i class="fas fa-heart mr-1"></i>Favorites
+                        </button>
+                        <div class="ml-auto flex items-center space-x-2">
+                            <label class="text-sm text-gray-400">Sort by:</label>
+                            <select id="sortSelect" onchange="sortPlans()" class="glass-dark text-white bg-transparent border border-white/10 rounded-lg px-3 py-1 text-sm">
+                                <option value="timestamp">Date</option>
+                                <option value="utilization">Utilization</option>
+                                <option value="items">Items Count</option>
+                                <option value="weight">Weight</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- AI Insights Panel -->
+            <div class="glass-dark insights-panel rounded-xl p-6 mb-8 border border-blue-500/20">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-white text-sm"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-white">AI Insights & Recommendations</h3>
+                    </div>
+                    <button class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-refresh"></i>
+                    </button>
+                </div>
+                <div id="aiInsights" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-lightbulb text-green-400"></i>
+                            <span class="text-green-400 font-medium">Optimization Tip</span>
+                        </div>
+                        <p class="text-sm text-gray-300">Your latest plans show 15% improvement in utilization. Consider applying similar strategies to maximize efficiency.</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-chart-line text-blue-400"></i>
+                            <span class="text-blue-400 font-medium">Trend Analysis</span>
+                        </div>
+                        <p class="text-sm text-gray-300">Container utilization has increased 23% over the past month. Peak performance achieved on Tuesday.</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-target text-purple-400"></i>
+                            <span class="text-purple-400 font-medium">Goal Progress</span>
+                        </div>
+                        <p class="text-sm text-gray-300">You're 78% towards your 90% utilization goal. Focus on medium-sized items for better packing.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Statistics Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="metric-card rounded-xl p-6 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm font-medium">Total Plans</p>
+                            <div class="flex items-end space-x-2">
+                                <p class="text-3xl font-bold text-white" id="totalPlans">0</p>
+                                <span class="text-green-400 text-sm font-medium">+12%</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">vs last month</p>
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-blue-600/30 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-boxes text-blue-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full progress-bar" style="width: 75%"></div>
+                    </div>
+                </div>
+                
+                <div class="metric-card rounded-xl p-6 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm font-medium">Avg Utilization</p>
+                            <div class="flex items-end space-x-2">
+                                <p class="text-3xl font-bold text-white" id="avgUtilization">0%</p>
+                                <span class="text-green-400 text-sm font-medium">+5.2%</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">efficiency increase</p>
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-green-500/20 to-green-600/30 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-percentage text-green-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full progress-bar" id="utilizationProgress"></div>
+                    </div>
+                </div>
+                
+                <div class="metric-card rounded-xl p-6 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm font-medium">Total Items</p>
+                            <div class="flex items-end space-x-2">
+                                <p class="text-3xl font-bold text-white" id="totalItems">0</p>
+                                <span class="text-purple-400 text-sm font-medium">+247</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">items this week</p>
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-purple-500/20 to-purple-600/30 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-cube text-purple-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full progress-bar" style="width: 60%"></div>
+                    </div>
+                </div>
+                
+                <div class="metric-card rounded-xl p-6 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm font-medium">Total Weight</p>
+                            <div class="flex items-end space-x-2">
+                                <p class="text-3xl font-bold text-white" id="totalWeight">0kg</p>
+                                <span class="text-orange-400 text-sm font-medium">+8.1%</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">capacity used</p>
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-orange-500/20 to-orange-600/30 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-weight text-orange-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full progress-bar" style="width: 45%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Enhanced Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="lg:col-span-2 glass-dark rounded-xl p-6 border border-white/10">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Utilization Trend</h3>
+                            <p class="text-sm text-gray-400">Track optimization performance over time</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 text-xs bg-blue-500/20 text-blue-400 rounded-lg">7D</button>
+                            <button class="px-3 py-1 text-xs bg-gray-700 text-gray-400 rounded-lg">30D</button>
+                            <button class="px-3 py-1 text-xs bg-gray-700 text-gray-400 rounded-lg">90D</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="utilizationChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="glass-dark rounded-xl p-6 border border-white/10">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Performance Distribution</h3>
+                            <p class="text-sm text-gray-400">Quality breakdown</p>
+                        </div>
+                        <button class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fas fa-expand-alt"></i>
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <div class="mt-4 space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span class="text-gray-300">Excellent (90%+)</span>
+                            </div>
+                            <span class="text-white font-medium" id="excellentCount">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <span class="text-gray-300">Good (70-89%)</span>
+                            </div>
+                            <span class="text-white font-medium" id="goodCount">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                <span class="text-gray-300">Average (50-69%)</span>
+                            </div>
+                            <span class="text-white font-medium" id="averageCount">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                    <h3 class="text-lg font-semibold text-white mb-4">Performance Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Container Plans Grid -->
+            <div class="glass-dark rounded-xl border border-white/10">
+                <div class="p-6 border-b border-white/10">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-semibold text-white">Container Plans History</h2>
+                            <p class="text-gray-400 text-sm mt-1">View and analyze your past optimization results</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2 text-sm text-gray-400">
+                                <span>View:</span>
+                                <button onclick="setViewMode('grid')" id="gridViewBtn" class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg transition-all">
+                                    <i class="fas fa-th-large mr-1"></i>Grid
+                                </button>
+                                <button onclick="setViewMode('list')" id="listViewBtn" class="px-3 py-1 bg-gray-700 text-gray-400 rounded-lg transition-all">
+                                    <i class="fas fa-list mr-1"></i>List
+                                </button>
+                            </div>
+                            <button onclick="exportPlans()" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all">
+                                <i class="fas fa-download mr-2"></i>Export All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Enhanced Loading State -->
+                    <div id="loadingState" class="text-center py-12 hidden">
+                        <div class="relative">
+                            <div class="loading-spinner mx-auto mb-4"></div>
+                            <div class="space-y-2">
+                                <div class="h-4 bg-gray-700 rounded skeleton w-48 mx-auto"></div>
+                                <div class="h-3 bg-gray-700 rounded skeleton w-32 mx-auto"></div>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 mt-4">Loading container plans...</p>
+                    </div>
+                    
+                    <!-- Enhanced Empty State -->
+                    <div id="emptyState" class="text-center py-16 hidden">
+                        <div class="w-24 h-24 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-cube text-gray-400 text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-300 mb-3">No Container Plans Found</h3>
+                        <p class="text-gray-400 mb-6 max-w-md mx-auto">Start optimizing containers to see your history here. Your optimization journey begins with your first plan.</p>
+                        <button onclick="window.location.href='/'" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all">
+                            <i class="fas fa-plus mr-2"></i>Create First Plan
+                        </button>
+                    </div>
+                    
+                    <!-- Plans Grid -->
+                    <div id="plansGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+                    
+                    <!-- Plans List View -->
+                    <div id="plansList" class="space-y-4 hidden"></div>
+                    
+                    <!-- Pagination -->
+                    <div id="pagination" class="mt-8 flex items-center justify-center space-x-2 hidden">
+                        <button onclick="previousPage()" class="px-3 py-2 glass-dark rounded-lg text-gray-400 hover:text-white transition-all" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div id="pageNumbers" class="flex space-x-1"></div>
+                        <button onclick="nextPage()" class="px-3 py-2 glass-dark rounded-lg text-gray-400 hover:text-white transition-all">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Enhanced Plan Detail Modal -->
+    <div id="planModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closePlanModal()"></div>
+        <div class="absolute inset-4 md:inset-8 glass-dark rounded-xl border border-white/20 overflow-hidden">
+            <div class="h-full flex flex-col">
+                <!-- Modal Header -->
+                <div class="p-6 border-b border-white/10 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <h3 class="text-xl font-semibold text-white" id="modalTitle">Container Plan Details</h3>
+                        <button onclick="toggleFavorite()" id="favoriteBtn" class="text-gray-400 hover:text-red-400 transition-colors">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="openVisualization()" class="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all">
+                            <i class="fas fa-cube mr-2"></i>3D View
+                        </button>
+                        <button onclick="exportCurrentPlan()" class="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                        <button onclick="closePlanModal()" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Modal Tabs -->
+                <div class="border-b border-white/10">
+                    <nav class="flex space-x-8 px-6">
+                        <button onclick="switchModalTab('overview')" class="modal-tab active py-4 px-2 border-b-2 border-blue-500 text-blue-400 font-medium text-sm">
+                            Overview
+                        </button>
+                        <button onclick="switchModalTab('items')" class="modal-tab py-4 px-2 border-b-2 border-transparent text-gray-400 hover:text-gray-300 font-medium text-sm">
+                            Items Details
+                        </button>
+                        <button onclick="switchModalTab('analytics')" class="modal-tab py-4 px-2 border-b-2 border-transparent text-gray-400 hover:text-gray-300 font-medium text-sm">
+                            Analytics
+                        </button>
+                        <button onclick="switchModalTab('history')" class="modal-tab py-4 px-2 border-b-2 border-transparent text-gray-400 hover:text-gray-300 font-medium text-sm">
+                            History
+                        </button>
+                    </nav>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div id="modalContent">
+                        <!-- Content will be dynamically populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notificationToast" class="fixed top-4 right-4 z-50 transform translate-x-full transition-transform duration-300">
+        <div class="glass-dark rounded-lg p-4 border border-white/20 min-w-80">
+            <div class="flex items-start space-x-3">
+                <div id="toastIcon" class="w-8 h-8 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check text-white"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 id="toastTitle" class="text-white font-medium">Success</h4>
+                    <p id="toastMessage" class="text-gray-300 text-sm mt-1">Operation completed successfully</p>
+                </div>
+                <button onclick="hideNotification()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+                    </button>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div id="modalContent"></div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="p-6 border-t border-white/10 flex justify-end space-x-4">
+                    <button onclick="closePlanModal()" class="px-4 py-2 glass-dark border border-white/20 rounded-lg text-white hover:bg-white/10">
+                        Close
+                    </button>
+                    <button onclick="openVisualization()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white">
+                        <i class="fas fa-cube mr-2"></i>View 3D
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🌟 JOYBOY OMEGA DASHBOARD SCRIPT - Divine Container Intelligence
+        let containerPlans = [];
+        let filteredPlans = [];
+        let currentPlan = null;
+        let utilizationChart = null;
+        let performanceChart = null;
+        let currentViewMode = 'grid';
+        let currentFilter = 'all';
+        let currentSort = 'timestamp';
+        let favorites = JSON.parse(localStorage.getItem('favoritePlans') || '[]');
+        let currentPage = 1;
+        const itemsPerPage = 12;
+        
+        // Enhanced particles system
+        class ParticleSystem {
+            constructor() {
+                this.particles = [];
+                this.container = document.getElementById('particles');
+                this.init();
+            }
+            
+            init() {
+                this.createParticles();
+                this.animate();
+            }
+            
+            createParticles() {
+                const particleTypes = ['', 'large', 'small'];
+                const particleCount = window.innerWidth < 768 ? 30 : 60;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    const type = particleTypes[Math.floor(Math.random() * particleTypes.length)];
+                    particle.className = `particle ${type}`;
+                    
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.top = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 8 + 's';
+                    particle.style.animationDuration = (Math.random() * 6 + 6) + 's';
+                    
+                    this.container.appendChild(particle);
+                    this.particles.push(particle);
+                }
+            }
+            
+            animate() {
+                // Add mouse interaction
+                document.addEventListener('mousemove', (e) => {
+                    const mouseX = e.clientX / window.innerWidth;
+                    const mouseY = e.clientY / window.innerHeight;
+                    
+                    this.particles.forEach((particle, index) => {
+                        const factor = 0.1 + (index % 3) * 0.05;
+                        particle.style.transform = `translate(${mouseX * 20 * factor}px, ${mouseY * 20 * factor}px)`;
+                    });
+                });
+            }
+        }
+
+        // Initialize dashboard with enhanced features
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🌟 JOYBOY OMEGA Dashboard Initializing...');
+            
+            // Initialize components in sequence
+            initializeTheme();
+            new ParticleSystem();
+            initializeCharts();
+            setupEventListeners();
+            setupKeyboardShortcuts();
+            initializeCommandPalette();
+            showWelcomeAnimation();
+            
+            // Load data after a short delay to show welcome animation
+            setTimeout(() => {
+                loadContainerPlans();
+            }, 500);
+            
+            console.log('✨ Dashboard initialization complete!');
+        });
+
+        // Theme management
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('dashboard-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('dashboard-theme', newTheme);
+            updateThemeIcon(newTheme);
+            
+            showNotification('info', 'Theme Changed', `Switched to ${newTheme} mode`);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+
+        // Enhanced keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Command Palette (Cmd+K or Ctrl+K)
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    toggleCommandPalette();
+                }
+                
+                // Search (Ctrl+F)
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+                
+                // Refresh (Ctrl+R)
+                if (e.ctrlKey && e.key === 'r') {
+                    e.preventDefault();
+                    refreshData();
+                }
+                
+                // Export (Ctrl+E)
+                if (e.ctrlKey && e.key === 'e') {
+                    e.preventDefault();
+                    exportData();
+                }
+                
+                // Close modal (Esc)
+                if (e.key === 'Escape') {
+                    closePlanModal();
+                    closeCommandPalette();
+                }
+            });
+        }
+
+        // Command Palette System
+        function initializeCommandPalette() {
+            const commands = [
+                { name: 'Refresh Data', icon: 'sync-alt', action: refreshData, description: 'Reload all container plans' },
+                { name: 'Export All Plans', icon: 'download', action: exportData, description: 'Download all plans as JSON' },
+                { name: 'Switch to Grid View', icon: 'th-large', action: () => setViewMode('grid'), description: 'Show plans in grid layout' },
+                { name: 'Switch to List View', icon: 'list', action: () => setViewMode('list'), description: 'Show plans in list layout' },
+                { name: 'Filter Excellent Plans', icon: 'star', action: () => filterByTag('excellent'), description: 'Show only 90%+ utilization' },
+                { name: 'Clear Filters', icon: 'times', action: () => filterByTag('all'), description: 'Show all plans' },
+                { name: 'Sort by Date', icon: 'clock', action: () => changeSortOrder('timestamp'), description: 'Sort by creation date' },
+                { name: 'Sort by Utilization', icon: 'percentage', action: () => changeSortOrder('utilization'), description: 'Sort by efficiency' }
+            ];
+            
+            window.commandPaletteData = commands;
+        }
+
+        function toggleCommandPalette() {
+            const palette = document.getElementById('commandPalette');
+            palette.classList.toggle('active');
+            
+            if (palette.classList.contains('active')) {
+                document.getElementById('commandInput').focus();
+                populateCommandResults('');
+            }
+        }
+
+        function closeCommandPalette() {
+            const palette = document.getElementById('commandPalette');
+            palette.classList.remove('active');
+            document.getElementById('commandInput').value = '';
+        }
+
+        function populateCommandResults(query) {
+            const results = document.getElementById('commandResults');
+            const commands = window.commandPaletteData.filter(cmd => 
+                cmd.name.toLowerCase().includes(query.toLowerCase()) ||
+                cmd.description.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            results.innerHTML = commands.map((cmd, index) => `
+                <div class="flex items-center p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors" 
+                     onclick="${cmd.action.name}(); closeCommandPalette();">
+                    <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-${cmd.icon} text-blue-400"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-white font-medium">${cmd.name}</div>
+                        <div class="text-gray-400 text-sm">${cmd.description}</div>
+                    </div>
+                    <kbd class="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">↩</kbd>
+                </div>
+            `).join('');
+        }
+
+        // Welcome animation
+        function showWelcomeAnimation() {
+            // Kill any existing animations first
+            gsap.killTweensOf("*");
+            
+            gsap.from(".fade-in", {
+                duration: 0.8,
+                y: 30,
+                opacity: 0,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+            
+            gsap.from(".slide-in-right", {
+                duration: 0.6,
+                x: 50,
+                opacity: 0,
+                delay: 0.3,
+                ease: "power2.out"
+            });
+            
+            // Animate header elements
+            gsap.from("header", {
+                duration: 0.6,
+                y: -50,
+                opacity: 0,
+                ease: "power2.out"
+            });
+        }
+
+        // Enhanced event listeners
+        function setupEventListeners() {
+            const searchInput = document.getElementById('searchInput');
+            const commandInput = document.getElementById('commandInput');
+            
+            searchInput.addEventListener('input', debounce((e) => {
+                filterPlans(e.target.value);
+            }, 300));
+            
+            commandInput.addEventListener('input', (e) => {
+                populateCommandResults(e.target.value);
+            });
+            
+            // Enhanced search with keyboard navigation
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const query = e.target.value.trim();
+                    if (query) {
+                        showNotification('success', 'Search Applied', `Showing results for "${query}"`);
+                    }
+                }
+            });
+        }
+
+        // Debounce utility
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Enhanced data loading with retry mechanism
+        async function loadContainerPlans() {
+            const maxRetries = 3;
+            let attempt = 0;
+            
+            while (attempt < maxRetries) {
+                try {
+                    console.log(`🚀 Loading container plans (attempt ${attempt + 1}/${maxRetries})...`);
+                    showLoadingState();
+                    
+                    const response = await fetch('/api/container_plans', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.plans && result.plans.length > 0) {
+                        containerPlans = result.plans.map(plan => ({
+                            ...plan,
+                            isFavorite: favorites.includes(plan.id),
+                            performance: calculatePerformance(plan)
+                        }));
+                        
+                        filteredPlans = [...containerPlans];
+                        
+                        console.log('✨ Successfully loaded', containerPlans.length, 'container plans');
+                        
+                        await updateStatistics();
+                        await updateCharts();
+                        renderPlans();
+                        hideLoadingState();
+                        
+                        showNotification('success', 'Data Loaded', `Successfully loaded ${containerPlans.length} plans`);
+                        return;
+                        
+                    } else {
+                        // No plans found - show empty state or simulate data for demo
+                        console.log('📝 No container plans found, simulating demo data...');
+                        
+                        // Generate demo data for showcase
+                        containerPlans = generateDemoData();
+                        filteredPlans = [...containerPlans];
+                        
+                        console.log('✨ Demo data loaded:', containerPlans.length, 'sample plans');
+                        
+                        await updateStatistics();
+                        await updateCharts();
+                        renderPlans();
+                        hideLoadingState();
+                        
+                        showNotification('info', 'Demo Mode', `Showing ${containerPlans.length} sample container plans`);
+                        return;
+                    }
+                    
+                } catch (error) {
+                    console.error(`❌ Attempt ${attempt + 1} failed:`, error);
+                    attempt++;
+                    
+                    if (attempt >= maxRetries) {
+                        console.error('🔥 All retry attempts failed');
+                        containerPlans = [];
+                        filteredPlans = [];
+                        showEmptyState();
+                        showNotification('error', 'Loading Failed', 'Unable to load container plans. Please try again.');
+                        return;
+                    }
+                    
+                    // Wait before retry
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                }
+            }
+        }
+
+        // Generate demo data for showcase
+        function generateDemoData() {
+            const demoPlans = [];
+            const containerTypes = ['40ft Standard', '20ft Standard', '40ft High Cube', '20ft High Cube'];
+            const statuses = ['excellent', 'good', 'average', 'poor'];
+            
+            for (let i = 1; i <= 12; i++) {
+                const utilization = Math.random() * 100;
+                const itemsPacked = Math.floor(Math.random() * 50) + 10;
+                const totalWeight = Math.random() * 1000 + 500;
+                const timestamp = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString();
+                
+                const plan = {
+                    id: `demo_${i}`,
+                    filename: `container_plan_demo_${i.toString().padStart(2, '0')}.json`,
+                    timestamp: timestamp,
+                    file_size: Math.floor(Math.random() * 10000) + 5000,
+                    data: {
+                        statistics: {
+                            volume_utilization: utilization,
+                            weight_utilization: Math.random() * 100,
+                            items_packed: itemsPacked,
+                            total_items: itemsPacked + Math.floor(Math.random() * 5),
+                            total_weight: totalWeight,
+                            packing_density: Math.random() * 2 + 0.5,
+                            container_type: containerTypes[Math.floor(Math.random() * containerTypes.length)]
+                        },
+                        packed_items: Array.from({length: itemsPacked}, (_, idx) => ({
+                            id: idx + 1,
+                            length: Math.floor(Math.random() * 100) + 20,
+                            width: Math.floor(Math.random() * 80) + 15,
+                            height: Math.floor(Math.random() * 60) + 10,
+                            weight: Math.floor(Math.random() * 50) + 5,
+                            position: {
+                                x: Math.floor(Math.random() * 200),
+                                y: Math.floor(Math.random() * 150),
+                                z: Math.floor(Math.random() * 100)
+                            }
+                        }))
+                    },
+                    isFavorite: Math.random() > 0.7
+                };
+                
+                plan.performance = calculatePerformance(plan);
+                if (plan.isFavorite) {
+                    favorites.push(plan.id);
+                }
+                
+                demoPlans.push(plan);
+            }
+            
+            // Save favorites to localStorage
+            localStorage.setItem('favoritePlans', JSON.stringify(favorites));
+            
+            return demoPlans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+        function calculatePerformance(plan) {
+            const utilization = plan.data?.statistics?.volume_utilization || 0;
+            const itemsPacked = plan.data?.statistics?.items_packed || 0;
+            const totalItems = plan.data?.statistics?.total_items || itemsPacked;
+            const packingEfficiency = totalItems > 0 ? (itemsPacked / totalItems) * 100 : 0;
+            
+            // Weighted performance score
+            const performanceScore = (utilization * 0.7) + (packingEfficiency * 0.3);
+            
+            if (performanceScore >= 90) return { level: 'excellent', score: performanceScore, color: '#10b981' };
+            if (performanceScore >= 70) return { level: 'good', score: performanceScore, color: '#3b82f6' };
+            if (performanceScore >= 50) return { level: 'average', score: performanceScore, color: '#f59e0b' };
+            return { level: 'poor', score: performanceScore, color: '#ef4444' };
+        }
+
+        // Enhanced state management
+        function showLoadingState() {
+            const loadingElement = document.getElementById('loadingState');
+            const emptyElement = document.getElementById('emptyState');
+            const gridElement = document.getElementById('plansGrid');
+            const listElement = document.getElementById('plansList');
+            
+            loadingElement?.classList.remove('hidden');
+            emptyElement?.classList.add('hidden');
+            gridElement?.classList.add('hidden');
+            listElement?.classList.add('hidden');
+            
+            // Stop any existing skeleton animations
+            gsap.killTweensOf('.skeleton');
+        }
+
+        function showEmptyState() {
+            // Stop all animations first
+            gsap.killTweensOf('.skeleton');
+            
+            document.getElementById('loadingState')?.classList.add('hidden');
+            document.getElementById('emptyState')?.classList.remove('hidden');
+            document.getElementById('plansGrid')?.classList.add('hidden');
+            document.getElementById('plansList')?.classList.add('hidden');
+        }
+
+        function hideLoadingState() {
+            // Stop all loading animations
+            gsap.killTweensOf('.skeleton');
+            
+            document.getElementById('loadingState')?.classList.add('hidden');
+            document.getElementById('emptyState')?.classList.add('hidden');
+            
+            if (currentViewMode === 'grid') {
+                document.getElementById('plansGrid')?.classList.remove('hidden');
+                document.getElementById('plansList')?.classList.add('hidden');
+            } else {
+                document.getElementById('plansGrid')?.classList.add('hidden');
+                document.getElementById('plansList')?.classList.remove('hidden');
+            }
+        }
+
+        // Enhanced statistics with animations
+        async function updateStatistics() {
+            const totalPlans = containerPlans.length;
+            const totalItems = containerPlans.reduce((sum, plan) => sum + (plan.data?.statistics?.items_packed || 0), 0);
+            const totalWeight = containerPlans.reduce((sum, plan) => sum + (plan.data?.statistics?.total_weight || 0), 0);
+            const avgUtilization = containerPlans.length > 0 
+                ? containerPlans.reduce((sum, plan) => sum + (plan.data?.statistics?.volume_utilization || 0), 0) / containerPlans.length 
+                : 0;
+
+            // Animate counter updates
+            animateCounter('totalPlans', totalPlans);
+            animateCounter('totalItems', totalItems);
+            animateCounter('totalWeight', totalWeight, 'kg');
+            animateCounter('avgUtilization', avgUtilization, '%');
+            
+            // Update progress bars
+            updateProgressBar('utilizationProgress', avgUtilization);
+            
+            // Update performance distribution
+            updatePerformanceDistribution();
+        }
+
+        function animateCounter(elementId, finalValue, suffix = '') {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const startValue = 0;
+            const duration = 1.5;
+            
+            gsap.to({ value: startValue }, {
+                duration: duration,
+                value: finalValue,
+                ease: "power2.out",
+                onUpdate: function() {
+                    const currentValue = Math.round(this.targets()[0].value);
+                    element.textContent = currentValue.toLocaleString() + suffix;
+                }
+            });
+        }
+
+        function updateProgressBar(elementId, percentage) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            gsap.to(element, {
+                duration: 1.2,
+                width: `${Math.min(percentage, 100)}%`,
+                ease: "power2.out"
+            });
+        }
+
+        function updatePerformanceDistribution() {
+            const performance = {
+                excellent: containerPlans.filter(plan => plan.performance?.level === 'excellent').length,
+                good: containerPlans.filter(plan => plan.performance?.level === 'good').length,
+                average: containerPlans.filter(plan => plan.performance?.level === 'average').length
+            };
+            
+            animateCounter('excellentCount', performance.excellent);
+            animateCounter('goodCount', performance.good);
+            animateCounter('averageCount', performance.average);
+        }
+                : 0;
+            
+            document.getElementById('totalPlans').textContent = totalPlans;
+            document.getElementById('totalItems').textContent = totalItems.toLocaleString();
+            document.getElementById('totalWeight').textContent = totalWeight.toFixed(1) + 'kg';
+            document.getElementById('avgUtilization').textContent = avgUtilization.toFixed(1) + '%';
+        }
+        
+        // Initialize charts
+        function initializeCharts() {
+            // Utilization Trend Chart
+            const utilizationCtx = document.getElementById('utilizationChart').getContext('2d');
+            utilizationChart = new Chart(utilizationCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Volume Utilization %',
+                        data: [],
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            ticks: { color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: { 
+                            ticks: { color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+            
+            // Performance Distribution Chart
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(performanceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
+                        borderWidth: 0,
+                        hoverBorderWidth: 2,
+                        hoverBorderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: 10
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'point'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { 
+                                color: '#ffffff',
+                                padding: 15,
+                                usePointStyle: true,
+                                boxWidth: 12,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: 'rgba(148, 163, 184, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} plans (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: false,
+                        duration: 800
+                    }
+                }
+            });
+        }
+        
+        // Update charts with data
+        function updateCharts() {
+            if (!containerPlans.length) return;
+            
+            // Sort plans by timestamp for trend chart
+            const sortedPlans = [...containerPlans].sort((a, b) => {
+                return new Date(a.data.timestamp) - new Date(b.data.timestamp);
+            });
+            
+            // Update utilization trend
+            const labels = sortedPlans.slice(-10).map(plan => {
+                const timestamp = plan.data.timestamp;
+                return timestamp.substring(4, 6) + '/' + timestamp.substring(6, 8);
+            });
+            
+            const utilizations = sortedPlans.slice(-10).map(plan => 
+                plan.data.statistics?.volume_utilization || 0
+            );
+            
+            utilizationChart.data.labels = labels;
+            utilizationChart.data.datasets[0].data = utilizations;
+            utilizationChart.update();
+            
+            // Update performance distribution
+            const excellent = containerPlans.filter(p => (p.data.statistics?.volume_utilization || 0) >= 90).length;
+            const good = containerPlans.filter(p => {
+                const util = p.data.statistics?.volume_utilization || 0;
+                return util >= 70 && util < 90;
+            }).length;
+            const average = containerPlans.filter(p => {
+                const util = p.data.statistics?.volume_utilization || 0;
+                return util >= 50 && util < 70;
+            }).length;
+            const poor = containerPlans.filter(p => (p.data.statistics?.volume_utilization || 0) < 50).length;
+            
+            // Only include categories that have data to avoid showing "poor" when not needed
+            const performanceData = [];
+            const performanceLabels = [];
+            const performanceColors = [];
+            
+            const categories = [
+                { label: 'Excellent (90%+)', value: excellent, color: '#10B981' },
+                { label: 'Good (70-89%)', value: good, color: '#3B82F6' },
+                { label: 'Average (50-69%)', value: average, color: '#F59E0B' },
+                { label: 'Poor (<50%)', value: poor, color: '#EF4444' }
+            ];
+            
+            categories.forEach(category => {
+                if (category.value > 0) {
+                    performanceData.push(category.value);
+                    performanceLabels.push(category.label);
+                    performanceColors.push(category.color);
+                }
+            });
+            
+            // If no data, show a placeholder
+            if (performanceData.length === 0) {
+                performanceData.push(1);
+                performanceLabels.push('No data available');
+                performanceColors.push('#374151');
+            }
+            
+            performanceChart.data.labels = performanceLabels;
+            performanceChart.data.datasets[0].data = performanceData;
+            performanceChart.data.datasets[0].backgroundColor = performanceColors;
+            performanceChart.update('none'); // Use 'none' to prevent animation issues
+        }
+        
+        // Filter plans based on search
+        function filterPlans(searchTerm) {
+            if (!searchTerm.trim()) {
+                filteredPlans = [...containerPlans];
+            } else {
+                const term = searchTerm.toLowerCase();
+                filteredPlans = containerPlans.filter(plan => {
+                    return plan.filename.toLowerCase().includes(term) ||
+                           plan.data.timestamp.includes(term) ||
+                           (plan.data.statistics?.items_packed || 0).toString().includes(term);
+                });
+            }
+            renderPlans();
+        }
+        
+        // Render container plans
+        function renderPlans() {
+            const plansGrid = document.getElementById('plansGrid');
+            plansGrid.innerHTML = '';
+            
+            if (filteredPlans.length === 0) {
+                plansGrid.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <p class="text-gray-400">No plans match your search criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredPlans.forEach(plan => {
+                const card = createPlanCard(plan);
+                plansGrid.appendChild(card);
+            });
+        }
+        
+        // Create plan card
+        function createPlanCard(plan) {
+            const stats = plan.data.statistics || {};
+            const utilization = stats.volume_utilization || 0;
+            const itemsPacked = stats.items_packed || 0;
+            const totalItems = stats.total_items || 0;
+            const totalWeight = stats.total_weight || 0;
+            
+            // Determine status based on utilization
+            let statusClass = 'status-poor';
+            let statusBg = 'bg-status-poor';
+            let statusText = 'Poor';
+            
+            if (utilization >= 90) {
+                statusClass = 'status-excellent';
+                statusBg = 'bg-status-excellent';
+                statusText = 'Excellent';
+            } else if (utilization >= 70) {
+                statusClass = 'status-good';
+                statusBg = 'bg-status-good';
+                statusText = 'Good';
+            } else if (utilization >= 50) {
+                statusClass = 'status-average';
+                statusBg = 'bg-status-average';
+                statusText = 'Average';
+            }
+            
+            const formatTimestamp = (timestamp) => {
+                if (!timestamp) return 'Unknown';
+                const year = timestamp.substring(0, 4);
+                const month = timestamp.substring(4, 6);
+                const day = timestamp.substring(6, 8);
+                const hour = timestamp.substring(9, 11);
+                const minute = timestamp.substring(11, 13);
+                return `${day}/${month}/${year} ${hour}:${minute}`;
+            };
+            
+            const card = document.createElement('div');
+            card.className = 'glass-dark border border-white/10 rounded-xl p-6 hover-scale cursor-pointer fade-in';
+            card.onclick = () => openPlanModal(plan);
+            
+            card.innerHTML = `
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-white mb-1">${plan.filename}</h3>
+                        <p class="text-gray-400 text-sm">${formatTimestamp(plan.data.timestamp)}</p>
+                    </div>
+                    <span class="${statusBg} ${statusClass} px-3 py-1 rounded-full text-xs font-medium border">
+                        ${statusText}
+                    </span>
+                </div>
+                
+                <div class="space-y-3">
+                    <!-- Utilization Progress -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-400">Volume Utilization</span>
+                            <span class="text-white font-medium">${utilization.toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full ${statusClass === 'status-excellent' ? 'bg-green-500' : 
+                                 statusClass === 'status-good' ? 'bg-blue-500' : 
+                                 statusClass === 'status-average' ? 'bg-yellow-500' : 'bg-red-500'}" 
+                                 style="width: ${Math.min(utilization, 100)}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-white">${itemsPacked}</p>
+                            <p class="text-xs text-gray-400">Items Packed</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-white">${totalWeight.toFixed(0)}</p>
+                            <p class="text-xs text-gray-400">kg Total</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="flex space-x-2 pt-2 border-t border-white/10">
+                        <button onclick="event.stopPropagation(); viewPlan('${plan.filename}')" 
+                                class="flex-1 px-3 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 text-sm hover:bg-blue-500/30 transition-all">
+                            <i class="fas fa-cube mr-1"></i>View 3D
+                        </button>
+                        <button onclick="event.stopPropagation(); downloadPlan('${plan.filename}')" 
+                                class="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-gray-300 text-sm hover:bg-white/20 transition-all">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Open plan modal
+        function openPlanModal(plan) {
+            currentPlan = plan;
+            const stats = plan.data.statistics || {};
+            const packedItems = plan.data.packed_items || [];
+            const unpackedItems = plan.data.unpacked_items || [];
+            
+            document.getElementById('modalTitle').textContent = plan.filename;
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Overview -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="glass-dark border border-white/10 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-white mb-4">Optimization Summary</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-blue-400">${(stats.volume_utilization || 0).toFixed(1)}%</p>
+                                    <p class="text-xs text-gray-400">Volume Used</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-green-400">${stats.items_packed || 0}</p>
+                                    <p class="text-xs text-gray-400">Items Packed</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-purple-400">${(stats.total_weight || 0).toFixed(0)}kg</p>
+                                    <p class="text-xs text-gray-400">Total Weight</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-orange-400">${(stats.remaining_volume || 0).toFixed(1)}</p>
+                                    <p class="text-xs text-gray-400">Remaining m³</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Packed Items -->
+                        <div class="glass-dark border border-white/10 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-white mb-4">Packed Items (${packedItems.length})</h4>
+                            <div class="max-h-64 overflow-y-auto space-y-2">
+                                ${packedItems.map(item => `
+                                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                                        <div class="flex-1">
+                                            <p class="text-white font-medium">${item.name}</p>
+                                            <p class="text-gray-400 text-sm">${item.dimensions?.join('×') || 'N/A'}m • ${item.weight || 0}kg</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-gray-300 text-sm">Position</p>
+                                            <p class="text-gray-400 text-xs">(${item.position?.map(p => p.toFixed(1)).join(', ') || 'N/A'})</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        ${unpackedItems.length > 0 ? `
+                        <!-- Unpacked Items -->
+                        <div class="glass-dark border border-red-500/20 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-red-400 mb-4">Unpacked Items (${unpackedItems.length})</h4>
+                            <div class="max-h-64 overflow-y-auto space-y-2">
+                                ${unpackedItems.map(item => `
+                                    <div class="flex items-center justify-between p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                                        <div class="flex-1">
+                                            <p class="text-white font-medium">${item.name}</p>
+                                            <p class="text-gray-400 text-sm">${item.dimensions?.join('×') || 'N/A'}m • ${item.weight || 0}kg</p>
+                                            <p class="text-red-300 text-xs mt-1">${item.reason || 'No reason provided'}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Sidebar Info -->
+                    <div class="space-y-4">
+                        <!-- Container Info -->
+                        <div class="glass-dark border border-white/10 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-white mb-3">Container Details</h4>
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Dimensions</p>
+                                    <p class="text-white">${plan.data.container_dimensions?.join(' × ') || 'N/A'}m</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400 text-sm">Created</p>
+                                    <p class="text-white">${new Date(plan.data.timestamp.substring(0, 4) + '-' + 
+                                                                    plan.data.timestamp.substring(4, 6) + '-' + 
+                                                                    plan.data.timestamp.substring(6, 8)).toLocaleDateString()}</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400 text-sm">Center of Gravity</p>
+                                    <p class="text-white text-sm">(${stats.center_of_gravity?.map(c => c.toFixed(2)).join(', ') || 'N/A'})</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Performance Metrics -->
+                        <div class="glass-dark border border-white/10 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-white mb-3">Performance</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Space Efficiency</span>
+                                        <span class="text-white">${(stats.volume_utilization || 0).toFixed(1)}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-2">
+                                        <div class="bg-blue-500 h-2 rounded-full" style="width: ${Math.min(stats.volume_utilization || 0, 100)}%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Item Success Rate</span>
+                                        <span class="text-white">${stats.total_items ? ((stats.items_packed / stats.total_items) * 100).toFixed(1) : 0}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: ${stats.total_items ? (stats.items_packed / stats.total_items) * 100 : 0}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('planModal').classList.remove('hidden');
+        }
+        
+        // Close plan modal
+        function closePlanModal() {
+            document.getElementById('planModal').classList.add('hidden');
+            currentPlan = null;
+        }
+        
+        // Open visualization
+        function openVisualization() {
+            if (currentPlan) {
+                window.open(`/visualization?plan=${encodeURIComponent(currentPlan.filename)}`, '_blank');
+            }
+        }
+        
+        // View specific plan
+        function viewPlan(filename) {
+            window.open(`/visualization?plan=${encodeURIComponent(filename)}`, '_blank');
+        }
+        
+        // Download plan
+        function downloadPlan(filename) {
+            const link = document.createElement('a');
+            link.href = `/api/container_plans/${encodeURIComponent(filename)}`;
+            link.download = filename;
+            link.click();
+        }
+        
+        // Refresh data
+        function refreshData() {
+            loadContainerPlans();
+        }
+        
+        // Clear all history
+        function clearAllHistory() {
+            if (confirm('Are you sure you want to clear all container plan history? This action cannot be undone.')) {
+                // Note: This would typically require an API endpoint to delete files
+                alert('Clear history functionality would require backend implementation to delete files safely.');
+            }
+        }
+    </script>
+</body> 
+</html>
